@@ -1,1 +1,166 @@
- 
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables - CRITICAL for security
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Firebase sensitive files
+firebase-service-account.json
+firebase-service-account-key.json
+firebase-credentials.json
+firebase-key.json
+service-account-key.json
+google-credentials.json
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+firebase-debug.*.log
+
+# Build outputs
+/frontend/build/
+/frontend/dist/
+/backend/dist/
+/backend/build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Uploads and generated files (development)
+/backend/uploads/
+/backend/thumbnails/
+/backend/enhanced/
+/backend/resized/
+/backend/collages/
+/backend/temp/
+/backend/cache/
+
+# Testing
+/coverage
+/.nyc_output
+
+# Production
+/build
+
+# Misc
+*.tgz
+*.tar.gz
+
+# Google Cloud credentials
+gcloud-credentials.json
+google-cloud-key.json
+*.pem
+*.key
+
+# AWS credentials
+.aws/
+aws-credentials.json
+aws-key.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Local configuration files
+config.local.js
+config.local.json
+settings.local.js
+settings.local.json
