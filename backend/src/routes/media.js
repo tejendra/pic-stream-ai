@@ -1,18 +1,43 @@
 const express = require('express');
 const { db, bucket } = require('../config/firebase');
+const { Timestamp } = require('firebase-admin/firestore');
 
 const router = express.Router();
 
-// Get user's media files
-router.get('/my', async (req, res) => {
+// Get all media for an album
+router.get('/album/:albumId', async (req, res) => {
   try {
+    const { albumId } = req.params;
     const { uid } = req.user;
     const { page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc' } = req.query;
+
+    // Verify user is a member of the album
+    const memberDoc = await db.collection('albumMembers')
+      .doc(`${albumId}_${uid}`)
+      .get();
+
+    if (!memberDoc.exists || !memberDoc.data().isActive) {
+      return res.status(403).json({ error: 'Access denied to this album' });
+    }
+
+    // Check if album has expired
+    const albumDoc = await db.collection('albums').doc(albumId).get();
+    if (!albumDoc.exists) {
+      return res.status(404).json({ error: 'Album not found' });
+    }
+
+    const album = albumDoc.data();
+    if (album.expirationDate.toDate() < new Date()) {
+      return res.status(410).json({ 
+        error: 'Album has expired',
+        expired: true
+      });
+    }
 
     const offset = (page - 1) * limit;
     
     let query = db.collection('media')
-      .where('uploadedBy', '==', uid)
+      .where('albumId', '==', albumId)
       .orderBy(sortBy, sortOrder)
       .limit(parseInt(limit))
       .offset(offset);
@@ -26,13 +51,14 @@ router.get('/my', async (req, res) => {
 
     // Get total count
     const totalSnapshot = await db.collection('media')
-      .where('uploadedBy', '==', uid)
+      .where('albumId', '==', albumId)
       .get();
     
     const total = totalSnapshot.size;
 
     res.json({
       media,
+      album,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -41,59 +67,8 @@ router.get('/my', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get media error:', error);
-    res.status(500).json({ error: 'Failed to fetch media' });
-  }
-});
-
-// Get public media files
-router.get('/public', async (req, res) => {
-  try {
-    const { page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc', tags } = req.query;
-
-    const offset = (page - 1) * limit;
-    
-    let query = db.collection('media')
-      .where('isPublic', '==', true)
-      .orderBy(sortBy, sortOrder)
-      .limit(parseInt(limit))
-      .offset(offset);
-
-    // Filter by tags if provided
-    if (tags) {
-      const tagArray = tags.split(',').map(tag => tag.trim());
-      query = query.where('tags', 'array-contains-any', tagArray);
-    }
-
-    const snapshot = await query.get();
-    const media = [];
-    
-    snapshot.forEach(doc => {
-      media.push({ id: doc.id, ...doc.data() });
-    });
-
-    // Get total count
-    let totalQuery = db.collection('media').where('isPublic', '==', true);
-    if (tags) {
-      const tagArray = tags.split(',').map(tag => tag.trim());
-      totalQuery = totalQuery.where('tags', 'array-contains-any', tagArray);
-    }
-    
-    const totalSnapshot = await totalQuery.get();
-    const total = totalSnapshot.size;
-
-    res.json({
-      media,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Get public media error:', error);
-    res.status(500).json({ error: 'Failed to fetch public media' });
+    console.error('Get album media error:', error);
+    res.status(500).json({ error: 'Failed to fetch album media' });
   }
 });
 
@@ -111,9 +86,25 @@ router.get('/:fileId', async (req, res) => {
 
     const media = mediaDoc.data();
 
-    // Check if user can access this media
-    if (!media.isPublic && media.uploadedBy !== uid) {
+    // Check if user is a member of the album
+    const memberDoc = await db.collection('albumMembers')
+      .doc(`${media.albumId}_${uid}`)
+      .get();
+
+    if (!memberDoc.exists || !memberDoc.data().isActive) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if album has expired
+    const albumDoc = await db.collection('albums').doc(media.albumId).get();
+    if (albumDoc.exists) {
+      const album = albumDoc.data();
+      if (album.expirationDate.toDate() < new Date()) {
+        return res.status(410).json({ 
+          error: 'Album has expired',
+          expired: true
+        });
+      }
     }
 
     // Increment view count
@@ -131,44 +122,7 @@ router.get('/:fileId', async (req, res) => {
   }
 });
 
-// Update media metadata
-router.put('/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const { uid } = req.user;
-    const { title, description, tags, isPublic } = req.body;
-
-    const mediaDoc = await db.collection('media').doc(fileId).get();
-    
-    if (!mediaDoc.exists) {
-      return res.status(404).json({ error: 'Media not found' });
-    }
-
-    const media = mediaDoc.data();
-
-    // Check if user owns this media
-    if (media.uploadedBy !== uid) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const updateData = {};
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (tags !== undefined) updateData.tags = tags.split(',').map(tag => tag.trim());
-    if (isPublic !== undefined) updateData.isPublic = isPublic === 'true';
-    
-    updateData.updatedAt = new Date();
-
-    await db.collection('media').doc(fileId).update(updateData);
-
-    res.json({ message: 'Media updated successfully' });
-  } catch (error) {
-    console.error('Update media error:', error);
-    res.status(500).json({ error: 'Failed to update media' });
-  }
-});
-
-// Delete media file
+// Delete media file (user can delete their own uploads, admin can delete any)
 router.delete('/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -182,8 +136,20 @@ router.delete('/:fileId', async (req, res) => {
 
     const media = mediaDoc.data();
 
-    // Check if user owns this media
-    if (media.uploadedBy !== uid) {
+    // Check if user is a member of the album
+    const memberDoc = await db.collection('albumMembers')
+      .doc(`${media.albumId}_${uid}`)
+      .get();
+
+    if (!memberDoc.exists || !memberDoc.data().isActive) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const memberData = memberDoc.data();
+
+    // Check if user can delete this media
+    // User can delete their own uploads, admin can delete any
+    if (media.uploadedBy !== uid && memberData.role !== 'admin') {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -192,18 +158,26 @@ router.delete('/:fileId', async (req, res) => {
     await file.delete();
 
     // Delete thumbnail if exists
-    if (media.thumbnailPath) {
-      const thumbnailFile = bucket.file(media.thumbnailPath);
+    if (media.thumbnailUrl) {
+      const thumbnailPath = media.thumbnailUrl.split('/').slice(-2).join('/');
+      const thumbnailFile = bucket.file(thumbnailPath);
       await thumbnailFile.delete();
+    }
+
+    // Delete preview if exists
+    if (media.previewUrl) {
+      const previewPath = media.previewUrl.split('/').slice(-2).join('/');
+      const previewFile = bucket.file(previewPath);
+      await previewFile.delete();
     }
 
     // Delete from Firestore
     await db.collection('media').doc(fileId).delete();
 
-    // Update user's storage usage
-    const userRef = db.collection('users').doc(uid);
-    await userRef.update({
-      storageUsed: admin.firestore.FieldValue.increment(-media.size)
+    // Update album media count
+    await db.collection('albums').doc(media.albumId).update({
+      mediaCount: admin.firestore.FieldValue.increment(-1),
+      updatedAt: Timestamp.now()
     });
 
     res.json({ message: 'Media deleted successfully' });
@@ -227,9 +201,25 @@ router.get('/:fileId/download', async (req, res) => {
 
     const media = mediaDoc.data();
 
-    // Check if user can access this media
-    if (!media.isPublic && media.uploadedBy !== uid) {
+    // Check if user is a member of the album
+    const memberDoc = await db.collection('albumMembers')
+      .doc(`${media.albumId}_${uid}`)
+      .get();
+
+    if (!memberDoc.exists || !memberDoc.data().isActive) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Check if album has expired
+    const albumDoc = await db.collection('albums').doc(media.albumId).get();
+    if (albumDoc.exists) {
+      const album = albumDoc.data();
+      if (album.expirationDate.toDate() < new Date()) {
+        return res.status(410).json({ 
+          error: 'Album has expired',
+          expired: true
+        });
+      }
     }
 
     // Increment download count
@@ -237,76 +227,15 @@ router.get('/:fileId/download', async (req, res) => {
       downloads: media.downloads + 1
     });
 
-    // Get signed URL for download
-    const file = bucket.file(media.filePath);
-    const [signedUrl] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-      responseDisposition: `attachment; filename="${media.originalName}"`
-    });
-
+    // Return download URL for original file
     res.json({
-      downloadUrl: signedUrl,
-      fileName: media.originalName
+      downloadUrl: media.publicUrl,
+      fileName: media.originalName,
+      mimeType: media.mimeType
     });
   } catch (error) {
     console.error('Download media error:', error);
-    res.status(500).json({ error: 'Failed to generate download URL' });
-  }
-});
-
-// Search media
-router.get('/search', async (req, res) => {
-  try {
-    const { q, page = 1, limit = 20, tags, uploadedBy } = req.query;
-    const { uid } = req.user;
-
-    const offset = (page - 1) * limit;
-    
-    let query = db.collection('media');
-
-    // Build query based on filters
-    if (uploadedBy) {
-      query = query.where('uploadedBy', '==', uploadedBy);
-    } else {
-      // If no specific user, only show public media or user's own
-      query = query.where('isPublic', '==', true);
-    }
-
-    if (tags) {
-      const tagArray = tags.split(',').map(tag => tag.trim());
-      query = query.where('tags', 'array-contains-any', tagArray);
-    }
-
-    query = query.orderBy('uploadedAt', 'desc')
-      .limit(parseInt(limit))
-      .offset(offset);
-
-    const snapshot = await query.get();
-    const media = [];
-    
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      // Filter by search query if provided
-      if (!q || 
-          data.title.toLowerCase().includes(q.toLowerCase()) ||
-          data.description.toLowerCase().includes(q.toLowerCase()) ||
-          data.tags.some(tag => tag.toLowerCase().includes(q.toLowerCase()))) {
-        media.push({ id: doc.id, ...data });
-      }
-    });
-
-    res.json({
-      media,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: media.length
-      }
-    });
-  } catch (error) {
-    console.error('Search media error:', error);
-    res.status(500).json({ error: 'Failed to search media' });
+    res.status(500).json({ error: 'Failed to get download link' });
   }
 });
 

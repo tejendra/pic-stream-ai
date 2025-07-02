@@ -4,6 +4,7 @@ const { db } = require('../config/firebase');
 const { optionalAuth } = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 const { bucket } = require('../config/firebase');
+const { Timestamp } = require('firebase-admin/firestore');
 
 const router = express.Router();
 
@@ -34,8 +35,8 @@ router.post('/generate', async (req, res) => {
       shareToken,
       fileId,
       uploadedBy: uid,
-      createdAt: new Date(),
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      createdAt: Timestamp.now(),
+      expiresAt: expiresAt ? Timestamp.fromDate(new Date(expiresAt)) : null,
       password: password ? await bcrypt.hash(password, 10) : null,
       allowDownload,
       views: 0,
@@ -279,14 +280,14 @@ router.put('/:shareId', async (req, res) => {
     }
 
     const updateData = {};
-    if (expiresAt !== undefined) updateData.expiresAt = new Date(expiresAt);
+    if (expiresAt !== undefined) updateData.expiresAt = Timestamp.fromDate(new Date(expiresAt));
     if (password !== undefined) {
       updateData.password = password ? await bcrypt.hash(password, 10) : null;
     }
     if (allowDownload !== undefined) updateData.allowDownload = allowDownload;
     if (isActive !== undefined) updateData.isActive = isActive;
     
-    updateData.updatedAt = new Date();
+    updateData.updatedAt = Timestamp.now();
 
     await db.collection('shares').doc(shareId).update(updateData);
 

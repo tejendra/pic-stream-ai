@@ -61,12 +61,12 @@ export const MediaProvider = ({ children }) => {
     return client;
   };
 
-  // Fetch user's media
-  const fetchMyMedia = async (page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc') => {
+  // Fetch album media
+  const fetchAlbumMedia = async (albumId, page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc') => {
     setLoading(true);
     try {
       const api = createApiClient();
-      const response = await api.get('/media/my', {
+      const response = await api.get(`/media/album/${albumId}`, {
         params: { page, limit, sortBy, sortOrder }
       });
 
@@ -74,46 +74,25 @@ export const MediaProvider = ({ children }) => {
       setPagination(response.data.pagination);
       return response.data;
     } catch (error) {
-      console.error('Fetch media error:', error);
-      toast.error('Failed to fetch media');
+      console.error('Fetch album media error:', error);
+      if (error.response?.status === 410) {
+        toast.error('This album has expired');
+      } else {
+        toast.error('Failed to fetch album media');
+      }
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch public media
-  const fetchPublicMedia = async (page = 1, limit = 20, tags = null) => {
-    setLoading(true);
-    try {
-      const api = createApiClient();
-      const response = await api.get('/media/public', {
-        params: { page, limit, tags }
-      });
-
-      setMedia(response.data.media);
-      setPagination(response.data.pagination);
-      return response.data;
-    } catch (error) {
-      console.error('Fetch public media error:', error);
-      toast.error('Failed to fetch public media');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Upload single file
-  const uploadFile = async (file, metadata = {}) => {
+  // Upload single file to album
+  const uploadFile = async (file, albumId) => {
     try {
       const api = createApiClient();
       const formData = new FormData();
       formData.append('file', file);
-      
-      // Add metadata
-      Object.keys(metadata).forEach(key => {
-        formData.append(key, metadata[key]);
-      });
+      formData.append('albumId', albumId);
 
       const response = await api.post('/upload/single', formData, {
         headers: {
@@ -122,16 +101,26 @@ export const MediaProvider = ({ children }) => {
       });
 
       toast.success('File uploaded successfully!');
+      
+      // Add new media to local state
+      setMedia(prev => [response.data.media, ...prev]);
+      
       return response.data;
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Upload failed');
+      if (error.response?.status === 410) {
+        toast.error('Album has expired');
+      } else if (error.response?.status === 400 && error.response.data.error?.includes('250MB')) {
+        toast.error('File size exceeds 250MB limit');
+      } else {
+        toast.error('Upload failed');
+      }
       throw error;
     }
   };
 
-  // Upload multiple files
-  const uploadMultipleFiles = async (files, metadata = {}) => {
+  // Upload multiple files to album
+  const uploadMultipleFiles = async (files, albumId) => {
     try {
       const api = createApiClient();
       const formData = new FormData();
@@ -139,11 +128,7 @@ export const MediaProvider = ({ children }) => {
       files.forEach(file => {
         formData.append('files', file);
       });
-
-      // Add metadata
-      Object.keys(metadata).forEach(key => {
-        formData.append(key, metadata[key]);
-      });
+      formData.append('albumId', albumId);
 
       const response = await api.post('/upload/multiple', formData, {
         headers: {
@@ -152,10 +137,20 @@ export const MediaProvider = ({ children }) => {
       });
 
       toast.success(`${files.length} files uploaded successfully!`);
+      
+      // Add new media to local state
+      setMedia(prev => [...response.data.files, ...prev]);
+      
       return response.data;
     } catch (error) {
       console.error('Multiple upload error:', error);
-      toast.error('Upload failed');
+      if (error.response?.status === 410) {
+        toast.error('Album has expired');
+      } else if (error.response?.status === 400 && error.response.data.error?.includes('250MB')) {
+        toast.error('Some files exceed 250MB limit');
+      } else {
+        toast.error('Upload failed');
+      }
       throw error;
     }
   };
@@ -168,26 +163,16 @@ export const MediaProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error('Get media error:', error);
-      toast.error('Failed to fetch media');
+      if (error.response?.status === 410) {
+        toast.error('Album has expired');
+      } else {
+        toast.error('Failed to fetch media');
+      }
       throw error;
     }
   };
 
-  // Update media
-  const updateMedia = async (id, updates) => {
-    try {
-      const api = createApiClient();
-      const response = await api.put(`/media/${id}`, updates);
-      toast.success('Media updated successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Update media error:', error);
-      toast.error('Failed to update media');
-      throw error;
-    }
-  };
-
-  // Delete media
+  // Delete media (user can delete their own, admin can delete any)
   const deleteMedia = async (id) => {
     try {
       const api = createApiClient();
@@ -196,9 +181,19 @@ export const MediaProvider = ({ children }) => {
       
       // Remove from local state
       setMedia(prev => prev.filter(item => item.id !== id));
+      
+      // Update pagination total
+      setPagination(prev => ({
+        ...prev,
+        total: prev.total - 1
+      }));
     } catch (error) {
       console.error('Delete media error:', error);
-      toast.error('Failed to delete media');
+      if (error.response?.status === 403) {
+        toast.error('You can only delete your own uploads');
+      } else {
+        toast.error('Failed to delete media');
+      }
       throw error;
     }
   };
@@ -221,127 +216,37 @@ export const MediaProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Download failed');
+      if (error.response?.status === 410) {
+        toast.error('Album has expired');
+      } else {
+        toast.error('Download failed');
+      }
       throw error;
     }
   };
 
-  // Search media
-  const searchMedia = async (query, page = 1, limit = 20, tags = null) => {
-    setLoading(true);
-    try {
-      const api = createApiClient();
-      const response = await api.get('/media/search', {
-        params: { q: query, page, limit, tags }
-      });
-
-      setMedia(response.data.media);
-      setPagination(response.data.pagination);
-      return response.data;
-    } catch (error) {
-      console.error('Search error:', error);
-      toast.error('Search failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Generate share link
-  const generateShareLink = async (fileId, options = {}) => {
-    try {
-      const api = createApiClient();
-      const response = await api.post('/share/generate', {
-        fileId,
-        ...options
-      });
-      
-      toast.success('Share link created successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Generate share error:', error);
-      toast.error('Failed to create share link');
-      throw error;
-    }
-  };
-
-  // Get shared content
-  const getSharedContent = async (shareToken, password = null) => {
-    try {
-      const api = createApiClient();
-      const response = await api.get(`/share/${shareToken}`, {
-        params: { password }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Get shared content error:', error);
-      throw error;
-    }
-  };
-
-  // AI Enhance image
-  const enhanceImage = async (fileId, options = {}) => {
-    try {
-      const api = createApiClient();
-      const response = await api.post(`/ai/enhance/${fileId}`, options);
-      toast.success('Image enhanced successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Enhance image error:', error);
-      toast.error('Failed to enhance image');
-      throw error;
-    }
-  };
-
-  // Generate resized versions
-  const generateResizedVersions = async (fileId, sizes = [300, 600, 1200]) => {
-    try {
-      const api = createApiClient();
-      const response = await api.post(`/ai/resize/${fileId}`, { sizes });
-      toast.success('Resized versions generated successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Resize error:', error);
-      toast.error('Failed to generate resized versions');
-      throw error;
-    }
-  };
-
-  // Create collage
-  const createCollage = async (fileIds, options = {}) => {
-    try {
-      const api = createApiClient();
-      const response = await api.post('/ai/collage', {
-        fileIds,
-        ...options
-      });
-      toast.success('Collage created successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Collage error:', error);
-      toast.error('Failed to create collage');
-      throw error;
-    }
+  // Clear media state
+  const clearMedia = () => {
+    setMedia([]);
+    setPagination({
+      page: 1,
+      limit: 20,
+      total: 0,
+      pages: 0
+    });
   };
 
   const value = {
     media,
     loading,
     pagination,
-    fetchMyMedia,
-    fetchPublicMedia,
+    fetchAlbumMedia,
     uploadFile,
     uploadMultipleFiles,
     getMedia,
-    updateMedia,
     deleteMedia,
     downloadMedia,
-    searchMedia,
-    generateShareLink,
-    getSharedContent,
-    enhanceImage,
-    generateResizedVersions,
-    createCollage
+    clearMedia
   };
 
   return (

@@ -40,39 +40,6 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 - **Google Cloud Storage** - Alternative file storage
 - **AWS S3** - Alternative file storage option
 
-## 📋 User Flows
-
-### 1. User Registration & Authentication
-```
-User visits app → Clicks "Sign Up" → Fills registration form → 
-Email verification → Account created → Redirected to dashboard
-```
-
-### 2. Photo/Video Upload
-```
-User logs in → Clicks "Upload" → Drags/drops files or selects from device → 
-Adds metadata (title, description, tags) → Files uploaded to Firebase Storage → 
-Metadata saved to Firestore → Success notification → Redirected to gallery
-```
-
-### 3. AI Enhancement
-```
-User selects image → Clicks "Enhance" → AI processes image → 
-Enhanced version generated → User can compare original vs enhanced → 
-Option to save enhanced version
-```
-
-### 4. Sharing Media
-```
-User selects media → Clicks "Share" → Configures share settings → 
-Share link generated → User copies/sends link → Recipients access shared content
-```
-
-### 5. Viewing Shared Content
-```
-Recipient receives link → Clicks link → Views shared media → 
-Option to download (if permitted) → View analytics (if owner)
-```
 
 ## 🛠️ Setup Instructions
 

@@ -15,7 +15,7 @@ const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const mediaRoutes = require('./routes/media');
 const shareRoutes = require('./routes/share');
-const aiRoutes = require('./routes/ai');
+const albumRoutes = require('./routes/albums');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -23,6 +23,9 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -60,7 +63,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', authenticateToken, uploadRoutes);
 app.use('/api/media', authenticateToken, mediaRoutes);
 app.use('/api/share', shareRoutes);
-app.use('/api/ai', authenticateToken, aiRoutes);
+app.use('/api/albums', authenticateToken, albumRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

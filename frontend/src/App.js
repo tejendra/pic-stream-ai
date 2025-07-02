@@ -3,22 +3,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { MediaProvider } from './contexts/MediaContext';
+import { AlbumProvider } from './contexts/AlbumContext';
 
 // Components
 import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Pages
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import LoginVerify from './pages/LoginVerify';
 import Dashboard from './pages/Dashboard';
-import Upload from './pages/Upload';
-import Gallery from './pages/Gallery';
+import Album from './pages/Album';
 import MediaDetail from './pages/MediaDetail';
 import ShareView from './pages/ShareView';
-import Profile from './pages/Profile';
+import JoinAlbum from './pages/JoinAlbum';
 import NotFound from './pages/NotFound';
 
 // Protected Route Component
@@ -29,7 +27,7 @@ const ProtectedRoute = ({ children }) => {
     return <LoadingSpinner />;
   }
   
-  return user ? children : <Navigate to="/login" replace />;
+  return user ? children : <Navigate to="/" replace />;
 };
 
 // Public Route Component (redirects if already logged in)
@@ -47,18 +45,18 @@ function AppContent() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Navbar />
+        {/* Only show Navbar if not on Home page */}
+        {window.location.pathname !== '/' && <Navbar />}
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={
+            <Route path="/" element={
               <PublicRoute>
-                <Login />
+                <Home />
               </PublicRoute>
             } />
-            <Route path="/register" element={
+            <Route path="/login/verify" element={
               <PublicRoute>
-                <Register />
+                <LoginVerify />
               </PublicRoute>
             } />
             <Route path="/dashboard" element={
@@ -66,24 +64,19 @@ function AppContent() {
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/upload" element={
+
+            <Route path="/album/:albumId" element={
               <ProtectedRoute>
-                <Upload />
+                <Album />
               </ProtectedRoute>
             } />
-            <Route path="/gallery" element={<Gallery />} />
             <Route path="/media/:id" element={<MediaDetail />} />
             <Route path="/share/:shareToken" element={<ShareView />} />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
+            <Route path="/join/:shareToken" element={<JoinAlbum />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
         </main>
-        <Footer />
         <Toaster 
           position="top-right"
           toastOptions={{
@@ -116,9 +109,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <MediaProvider>
-        <AppContent />
-      </MediaProvider>
+      <AlbumProvider>
+        <MediaProvider>
+          <AppContent />
+        </MediaProvider>
+      </AlbumProvider>
     </AuthProvider>
   );
 }

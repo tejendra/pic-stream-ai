@@ -1,252 +1,174 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Camera, 
-  Upload, 
-  Share2, 
-  Zap, 
-  Shield, 
-  Globe,
-  ArrowRight,
-  Play,
-  Star,
-  Users,
-  Image,
-  Video
-} from 'lucide-react';
+import { Camera, ArrowRight, Mail, Send, X } from 'lucide-react';
+
+const funShapes = [
+  { style: 'absolute top-10 left-10 bg-yellow-300', size: 'w-10 h-10', shape: 'rounded-full', opacity: 'opacity-60', rotate: 'rotate-12' },
+  { style: 'absolute bottom-16 right-16 bg-pink-400', size: 'w-16 h-16', shape: 'rounded-2xl', opacity: 'opacity-40', rotate: '-rotate-6' },
+  { style: 'absolute top-1/2 left-1/4 bg-blue-400', size: 'w-8 h-8', shape: 'rounded-full', opacity: 'opacity-50', rotate: 'rotate-45' },
+  { style: 'absolute bottom-24 left-1/3 bg-purple-400', size: 'w-6 h-6', shape: 'rounded-full', opacity: 'opacity-40', rotate: 'rotate-12' },
+];
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user, sendLoginLink } = useAuth();
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
 
-  const features = [
-    {
-      icon: Upload,
-      title: 'High-Quality Uploads',
-      description: 'Upload your photos and videos in their original quality without compression.'
-    },
-    {
-      icon: Share2,
-      title: 'Easy Sharing',
-      description: 'Generate secure share links for friends and family with customizable permissions.'
-    },
-    {
-      icon: Zap,
-      title: 'AI Enhancement',
-      description: 'Automatically enhance your images with AI-powered tools and filters.'
-    },
-    {
-      icon: Shield,
-      title: 'Secure Storage',
-      description: 'Your memories are safely stored with enterprise-grade security.'
-    },
-    {
-      icon: Globe,
-      title: 'Global Access',
-      description: 'Access your media from anywhere, on any device, anytime.'
-    },
-    {
-      icon: Camera,
-      title: 'Smart Organization',
-      description: 'AI-powered tagging and organization to keep your media organized.'
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const result = await sendLoginLink(email);
+      if (result.success) {
+        setLinkSent(true);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const stats = [
-    { label: 'Photos Shared', value: '10M+', icon: Image },
-    { label: 'Videos Uploaded', value: '2M+', icon: Video },
-    { label: 'Happy Users', value: '500K+', icon: Users },
-    { label: 'Countries', value: '150+', icon: Globe }
-  ];
+  const resetForm = () => {
+    setShowLoginForm(false);
+    setEmail('');
+    setLinkSent(false);
+  };
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Share Your Memories in
-              <span className="block text-yellow-300">Crystal Clear Quality</span>
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              Don't let WhatsApp compress your vacation photos into pixelated mush. 
-              Share stunning photos and videos in their full, glorious original quality.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? (
-                <Link
-                  to="/upload"
-                  className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center"
-                >
-                  <Upload className="mr-2 h-5 w-5" />
-                  Start Uploading
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    to="/register"
-                    className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center"
-                  >
-                    Get Started Free
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors duration-200 flex items-center justify-center"
-                  >
-                    Sign In
-                  </Link>
-                </>
-              )}
-            </div>
+    <div className="min-h-screen bg-white">
+      <section className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-400 overflow-hidden">
+        {/* Fun floating shapes */}
+        {funShapes.map((s, i) => (
+          <div
+            key={i}
+            className={`z-0 ${s.style} ${s.size} ${s.shape} ${s.opacity} ${s.rotate} blur-2xl animate-pulse`}
+            style={{ animationDuration: `${2 + i}s` }}
+          />
+        ))}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-32">
+          <div className="flex items-center justify-center mb-6">
+            <span className="inline-flex items-center justify-center bg-white bg-opacity-80 rounded-full p-4 shadow-lg">
+              <Camera className="h-12 w-12 text-blue-600" />
+            </span>
           </div>
-        </div>
-        
-        {/* Floating elements */}
-        <div className="absolute top-20 left-10 opacity-20">
-          <Camera className="h-16 w-16" />
-        </div>
-        <div className="absolute bottom-20 right-10 opacity-20">
-          <Image className="h-16 w-16" />
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="text-center">
-                  <div className="flex justify-center mb-4">
-                    <Icon className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-gray-600">{stat.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose PicStream AI?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We've built the perfect platform for sharing your precious memories 
-              with the people who matter most.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div key={index} className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-                  <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-lg mb-6">
-                    <Icon className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Share Your Memories?
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Join thousands of users who trust PicStream AI for their precious photos and videos.
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
+            Drop Moments. <span className="text-yellow-300">Share Joy.</span>
+          </h1>
+          <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-xl mx-auto font-medium">
+            The easiest, happiest way to share photos & videos from any event. No logins, no clutter, just pure fun. 🎉
           </p>
-          {user ? (
-            <Link
-              to="/upload"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
-            >
-              <Upload className="mr-2 h-5 w-5" />
-              Upload Your First Photo
-            </Link>
-          ) : (
-            <Link
-              to="/register"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center"
-            >
-              Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          )}
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              What Our Users Say
-            </h2>
-            <p className="text-xl text-gray-600">
-              Don't just take our word for it - hear from our community.
-            </p>
-          </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah Johnson",
-                role: "Travel Photographer",
-                content: "PicStream AI has revolutionized how I share my travel photos. No more compression, just pure quality!",
-                rating: 5
-              },
-              {
-                name: "Mike Chen",
-                role: "Family Man",
-                content: "Finally, a way to share family videos without losing quality. My parents can see every detail clearly.",
-                rating: 5
-              },
-              {
-                name: "Emma Davis",
-                role: "Wedding Photographer",
-                content: "The AI enhancement features are incredible. My clients love the professional touch it adds to their photos.",
-                rating: 5
-              }
-            ].map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 p-8 rounded-lg">
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
+          {/* Login Form or Button */}
+          <div className="flex flex-col items-center justify-center">
+            {!user && !showLoginForm && !linkSent && (
+              <button
+                onClick={() => setShowLoginForm(true)}
+                className="bg-white bg-opacity-80 text-blue-700 px-8 py-4 rounded-full font-bold text-lg shadow hover:bg-opacity-100 transition-colors duration-200 flex items-center justify-center"
+              >
+                Login
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+            )}
+            
+            {!user && showLoginForm && !linkSent && (
+              <div className="bg-white bg-opacity-95 rounded-2xl p-8 shadow-xl max-w-md w-full">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Welcome to MomentDrop</h2>
+                  <button
+                    onClick={resetForm}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
                 </div>
-                <p className="text-gray-700 mb-6 italic">
-                  "{testimonial.content}"
+                <p className="text-gray-600 mb-6 text-center">
+                  Enter your email to receive a secure login link
                 </p>
-                <div>
-                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                  <div className="text-gray-600">{testimonial.role}</div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'Sending...' : 'Send Login Link'}
+                  </button>
+                </form>
+                <p className="text-sm text-gray-500 text-center mt-4">
+                  No password required. We'll send you a secure link to sign in.
+                </p>
+              </div>
+            )}
+            
+            {!user && linkSent && (
+              <div className="bg-white bg-opacity-95 rounded-2xl p-8 shadow-xl max-w-md w-full">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <Send className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Check your email
+                  </h2>
+                  <p className="text-gray-600 mb-4">
+                    We've sent a login link to <strong>{email}</strong>
+                  </p>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Click the link in your email to sign in to MomentDrop. The link will expire in 15 minutes.
+                  </p>
+                  <button
+                    onClick={resetForm}
+                    className="text-blue-600 hover:text-blue-500 font-medium"
+                  >
+                    Send another link
+                  </button>
                 </div>
               </div>
-            ))}
+            )}
+            
+            {user && (
+              <Link
+                to="/dashboard"
+                className="bg-white bg-opacity-80 text-blue-700 px-8 py-4 rounded-full font-bold text-lg shadow hover:bg-opacity-100 transition-colors duration-200 flex items-center justify-center"
+              >
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            )}
           </div>
+        </div>
+        {/* Subtle confetti or sparkles (optional, for fun) */}
+        <div className="pointer-events-none absolute inset-0 z-0">
+          {[...Array(18)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-white/60 rounded-full animate-bounce"
+              style={{
+                width: `${6 + Math.random() * 10}px`,
+                height: `${6 + Math.random() * 10}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDuration: `${1.5 + Math.random() * 2}s`,
+                animationDelay: `${Math.random() * 2}s`,
+              }}
+            />
+          ))}
         </div>
       </section>
     </div>

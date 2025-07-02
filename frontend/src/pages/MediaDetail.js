@@ -1,45 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useMedia } from '../contexts/MediaContext';
+import { useMediaDetails } from '../hooks';
 import { 
   Download, 
-  Share2, 
-  Eye, 
   Calendar, 
   User, 
-  Tag, 
-  ArrowLeft,
-  Copy,
-  ExternalLink,
-  Lock,
-  Globe
+  ArrowLeft
 } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const MediaDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getMediaById, loading } = useMedia();
-  const [media, setMedia] = useState(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const fetchMedia = async () => {
-      try {
-        const result = await getMediaById(id);
-        if (result.success) {
-          setMedia(result.data);
-        } else {
-          navigate('/gallery');
-        }
-      } catch (error) {
-        console.error('Error fetching media:', error);
-        navigate('/gallery');
-      }
-    };
-
-    fetchMedia();
-  }, [id, getMediaById, navigate]);
+  const { media, loading, error, download } = useMediaDetails(id);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -50,7 +23,11 @@ const MediaDetail = () => {
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    if (!date || typeof date.toDate !== 'function') {
+      console.error('Invalid Firestore Timestamp:', date);
+      return 'Invalid Date';
+    }
+    return date.toDate().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -59,41 +36,36 @@ const MediaDetail = () => {
     });
   };
 
-  const copyToClipboard = async (text) => {
+  const handleDownload = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await download();
     } catch (error) {
-      console.error('Failed to copy:', error);
+      console.error('Download failed:', error);
     }
   };
 
-  const shareMedia = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: media.title,
-        text: media.description,
-        url: window.location.href
-      });
-    } else {
-      copyToClipboard(window.location.href);
-    }
-  };
-
-  const downloadMedia = () => {
-    const link = document.createElement('a');
-    link.href = media.url;
-    link.download = media.title || 'download';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  if (loading || !media) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error || !media) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Media Not Found</h2>
+          <p className="text-gray-600 mb-4">{error || 'The requested media could not be found.'}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -104,13 +76,13 @@ const MediaDetail = () => {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/gallery')}
+            onClick={() => navigate(-1)}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Gallery
+            Back to Album
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{media.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{media.title || 'Untitled'}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -119,8 +91,8 @@ const MediaDetail = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               {media.mimeType?.startsWith('image/') ? (
                 <img
-                  src={media.url}
-                  alt={media.title}
+                  src={media.previewUrl || media.url}
+                  alt={media.title || 'Image'}
                   className="w-full h-auto max-h-96 object-contain"
                 />
               ) : (
@@ -141,28 +113,12 @@ const MediaDetail = () => {
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
               <div className="space-y-3">
-                {media.allowDownload && (
-                  <button
-                    onClick={downloadMedia}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </button>
-                )}
                 <button
-                  onClick={shareMedia}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={handleDownload}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </button>
-                <button
-                  onClick={() => copyToClipboard(window.location.href)}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  {copied ? 'Copied!' : 'Copy Link'}
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Original
                 </button>
               </div>
             </div>
@@ -186,115 +142,49 @@ const MediaDetail = () => {
                   <dd className="text-sm text-gray-900">{formatDate(media.uploadedAt)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Views
+                  <dt className="text-sm font-medium text-gray-500">
+                    File Size
                   </dt>
-                  <dd className="text-sm text-gray-900">{media.views || 0}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Download className="h-4 w-4 mr-2" />
-                    Downloads
-                  </dt>
-                  <dd className="text-sm text-gray-900">{media.downloads || 0}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500">File size</dt>
                   <dd className="text-sm text-gray-900">{formatFileSize(media.size)}</dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500">File type</dt>
+                  <dt className="text-sm font-medium text-gray-500">
+                    File Type
+                  </dt>
                   <dd className="text-sm text-gray-900">{media.mimeType}</dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    {media.isPublic ? (
-                      <Globe className="h-4 w-4 mr-2 text-green-500" />
-                    ) : (
-                      <Lock className="h-4 w-4 mr-2 text-red-500" />
-                    )}
-                    Visibility
-                  </dt>
-                  <dd className="text-sm text-gray-900">
-                    {media.isPublic ? 'Public' : 'Private'}
-                  </dd>
-                </div>
+                {media.album && (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm font-medium text-gray-500">
+                      Album
+                    </dt>
+                    <dd className="text-sm text-gray-900">
+                      <Link 
+                        to={`/album/${media.album.id}`}
+                        className="text-blue-600 hover:text-blue-500"
+                      >
+                        {media.album.title}
+                      </Link>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
 
-            {/* Description */}
-            {media.description && (
+            {/* Album Navigation */}
+            {media.album && (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Description</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{media.description}</p>
-              </div>
-            )}
-
-            {/* Tags */}
-            {media.tags && media.tags.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <Tag className="h-5 w-5 mr-2" />
-                  Tags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {media.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Album Navigation</h3>
+                <div className="space-y-3">
+                  <Link
+                    to={`/album/${media.album.id}`}
+                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    View All Photos
+                  </Link>
                 </div>
               </div>
             )}
-
-            {/* Share Information */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Share</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Direct Link
-                  </label>
-                  <div className="flex">
-                    <input
-                      type="text"
-                      value={window.location.href}
-                      readOnly
-                      className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(window.location.href)}
-                      className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Embed Code
-                  </label>
-                  <div className="flex">
-                    <input
-                      type="text"
-                      value={`<img src="${media.url}" alt="${media.title}" />`}
-                      readOnly
-                      className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(`<img src="${media.url}" alt="${media.title}" />`)}
-                      className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -302,4 +192,4 @@ const MediaDetail = () => {
   );
 };
 
-export default MediaDetail; 
+export default MediaDetail;

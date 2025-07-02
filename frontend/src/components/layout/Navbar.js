@@ -3,13 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Camera, 
-  Upload, 
   User, 
   LogOut, 
   Menu, 
   X, 
-  Home,
-  Image,
   Settings
 } from 'lucide-react';
 
@@ -26,14 +23,9 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const navItems = [
-    { path: '/', label: 'Home', icon: Home },
-    { path: '/gallery', label: 'Gallery', icon: Image },
-    ...(user ? [
-      { path: '/dashboard', label: 'Dashboard', icon: Camera },
-      { path: '/upload', label: 'Upload', icon: Upload }
-    ] : [])
-  ];
+  const navItems = user ? [
+    { path: '/dashboard', label: 'Dashboard', icon: Camera }
+  ] : [];
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200">
@@ -113,12 +105,6 @@ const Navbar = () => {
                   className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                 >
                   Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                >
-                  Sign Up
                 </Link>
               </div>
             )}
@@ -210,13 +196,6 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign Up
                 </Link>
               </div>
             )}

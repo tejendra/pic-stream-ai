@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile
+  signInWithCustomToken,
+  signOut
 } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -35,65 +34,47 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Use react-firebase-hooks for auth state management
+  const [user, loading, error] = useAuthState(auth);
+  const [customUser, setCustomUser] = useState(null);
 
+  // Update custom user state when Firebase user changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Get the ID token for API calls
-        user.getIdToken().then((token) => {
-          setUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            token
-          });
+    if (user) {
+      // Get the ID token for API calls
+      user.getIdToken().then((token) => {
+        setCustomUser({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          token
         });
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const login = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      
-      setUser({
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: userCredential.user.displayName,
-        photoURL: userCredential.user.photoURL,
-        token
       });
+    } else {
+      setCustomUser(null);
+    }
+  }, [user]);
 
-      toast.success('Login successful!');
+  // Handle auth errors
+  useEffect(() => {
+    if (error) {
+      console.error('Auth error:', error);
+      toast.error('Authentication error occurred');
+    }
+  }, [error]);
+
+  const sendLoginLink = async (email) => {
+    try {
+      const response = await axios.post('/api/auth/send-login-link', { email });
+      toast.success('Login link sent to your email!');
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
-      let message = 'Login failed';
+      console.error('Send login link error:', error);
+      let message = 'Failed to send login link';
       
-      switch (error.code) {
-        case 'auth/user-not-found':
-          message = 'No account found with this email';
-          break;
-        case 'auth/wrong-password':
-          message = 'Incorrect password';
-          break;
-        case 'auth/invalid-email':
-          message = 'Invalid email address';
-          break;
-        case 'auth/too-many-requests':
-          message = 'Too many failed attempts. Please try again later';
-          break;
-        default:
-          message = error.message;
+      if (error.response?.data?.error) {
+        message = error.response.data.error;
       }
       
       toast.error(message);
@@ -101,43 +82,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, displayName) => {
+  const verifyLoginToken = async (token) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const response = await axios.post('/api/auth/verify-token', { token });
+      const { customToken, user } = response.data;
       
-      // Update profile with display name
-      await updateProfile(userCredential.user, {
-        displayName: displayName
-      });
-
-      const token = await userCredential.user.getIdToken();
+      // Sign in with custom token
+      const userCredential = await signInWithCustomToken(auth, customToken);
       
-      setUser({
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: displayName,
-        photoURL: userCredential.user.photoURL,
-        token
-      });
-
-      toast.success('Account created successfully!');
+      toast.success('Login successful!');
       return { success: true };
     } catch (error) {
-      console.error('Registration error:', error);
-      let message = 'Registration failed';
+      console.error('Verify token error:', error);
+      let message = 'Login failed';
       
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          message = 'An account with this email already exists';
-          break;
-        case 'auth/weak-password':
-          message = 'Password should be at least 6 characters';
-          break;
-        case 'auth/invalid-email':
-          message = 'Invalid email address';
-          break;
-        default:
-          message = error.message;
+      if (error.response?.data?.error) {
+        message = error.response.data.error;
       }
       
       toast.error(message);
@@ -148,7 +108,6 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut(auth);
-      setUser(null);
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
@@ -156,34 +115,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateUserProfile = async (updates) => {
-    try {
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, updates);
-        
-        // Update local user state
-        const token = await auth.currentUser.getIdToken();
-        setUser(prev => ({
-          ...prev,
-          ...updates,
-          token
-        }));
-        
-        toast.success('Profile updated successfully');
-        return { success: true };
-      }
-    } catch (error) {
-      console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
-      return { success: false, error: error.message };
-    }
-  };
-
   const refreshToken = async () => {
     try {
       if (auth.currentUser) {
         const token = await auth.currentUser.getIdToken(true);
-        setUser(prev => ({
+        setCustomUser(prev => ({
           ...prev,
           token
         }));
@@ -197,12 +133,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
-    user,
+    user: customUser,
     loading,
-    login,
-    register,
+    error,
+    sendLoginLink,
+    verifyLoginToken,
     logout,
-    updateUserProfile,
     refreshToken
   };
 
