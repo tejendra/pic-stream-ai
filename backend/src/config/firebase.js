@@ -20,11 +20,8 @@ const db = admin.firestore();
 
 // Initialize Google Cloud Storage
 const storage = new Storage({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || serviceAccount.project_id,
-  keyFilename: process.env.GOOGLE_CLOUD_KEY_FILE || undefined,
-  credentials: process.env.GOOGLE_CLOUD_CREDENTIALS 
-    ? JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS)
-    : undefined
+  projectId: serviceAccount.project_id,
+  credentials: serviceAccount
 });
 
 const bucket = storage.bucket(process.env.FIREBASE_STORAGE_BUCKET || 'pic-stream-ai.appspot.com');
