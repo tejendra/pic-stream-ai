@@ -237,10 +237,10 @@ router.post('/single', upload.single('file'), async (req, res) => {
         await db.collection('media').doc(fileId).set(mediaDoc);
 
         // Update album media count
-        await db.collection('albums').doc(albumId).update({
+        await db.collection('albums').doc(albumId).set({
           mediaCount: FieldValue.increment(1),
           updatedAt: Timestamp.now()
-        });
+        }, { merge: true });
 
         res.status(201).json({
           message: 'File uploaded successfully',
@@ -452,10 +452,10 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
     const uploadedFiles = await Promise.all(uploadPromises);
     
     // Update album media count
-    await db.collection('albums').doc(albumId).update({
+    await db.collection('albums').doc(albumId).set({
       mediaCount: FieldValue.increment(uploadedFiles.length),
       updatedAt: Timestamp.now()
-    });
+    }, { merge: true });
 
     res.status(201).json({
       message: `${uploadedFiles.length} files uploaded successfully`,

@@ -33,6 +33,22 @@ router.post('/send-login-link', [
 
     const { email, returnTo } = req.body;
 
+    // Check if there's already a valid token for this email
+    const existingTokensSnapshot = await db.collection('loginTokens')
+      .where('email', '==', email)
+      .where('used', '==', false)
+      .where('expiresAt', '>', Timestamp.now())
+      .get();
+
+    if (!existingTokensSnapshot.empty) {
+      // Delete existing valid tokens to prevent confusion
+      const batch = db.batch();
+      existingTokensSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+
     // Generate unique token
     const token = uuidv4();
     const expiresAt = new Date();
@@ -118,37 +134,80 @@ router.post('/verify-token', [
     }
 
     // Mark token as used
-    await tokenDoc.ref.update({ used: true });
+    await tokenDoc.ref.set({ used: true }, { merge: true });
 
     const email = tokenData.email;
 
-    // Get or create user
+    // Get or create user with better error handling
     let userRecord;
     try {
+      // First, try to get existing user by email
       userRecord = await auth.getUserByEmail(email);
+      
+      // Update last login for existing user (create document if it doesn't exist)
+      await db.collection('users').doc(userRecord.uid).set({
+        email: email,
+        lastLoginAt: Timestamp.now()
+      }, { merge: true });
     } catch (error) {
       if (error.code === 'auth/user-not-found') {
-        // Create new user
-        userRecord = await auth.createUser({
-          email: email,
-          emailVerified: true
-        });
+        // Check if email is already mapped in our system
+        const emailMappingDoc = await db.collection('userEmails').doc(email).get();
+        if (emailMappingDoc.exists) {
+          // Email is mapped but user doesn't exist in Firebase Auth (inconsistent state)
+          // Try to get the user again, or clean up the mapping
+          try {
+            userRecord = await auth.getUserByEmail(email);
+          } catch (retryError) {
+            if (retryError.code === 'auth/user-not-found') {
+              // Clean up inconsistent mapping
+              await emailMappingDoc.ref.delete();
+            } else {
+              throw retryError;
+            }
+          }
+        }
+        
+        // If we still don't have a user, create new user
+        if (!userRecord) {
+          try {
+            userRecord = await auth.createUser({
+              email: email,
+              emailVerified: true
+            });
 
-        // Create user profile in Firestore
-        await db.collection('users').doc(userRecord.uid).set({
-          email: email,
-          createdAt: Timestamp.now(),
-          lastLoginAt: Timestamp.now()
-        });
+            // Create user profile in Firestore
+            await db.collection('users').doc(userRecord.uid).set({
+              email: email,
+              createdAt: Timestamp.now(),
+              lastLoginAt: Timestamp.now()
+            });
+
+            // Also store email mapping for uniqueness check
+            await db.collection('userEmails').doc(email).set({
+              uid: userRecord.uid,
+              createdAt: Timestamp.now()
+            });
+          } catch (createError) {
+            // Handle case where user was created by another request between our check and create
+            if (createError.code === 'auth/email-already-exists') {
+              // User was created by another request, get the existing user
+              userRecord = await auth.getUserByEmail(email);
+              
+              // Update last login for the existing user (create document if it doesn't exist)
+              await db.collection('users').doc(userRecord.uid).set({
+                email: email,
+                lastLoginAt: Timestamp.now()
+              }, { merge: true });
+            } else {
+              throw createError;
+            }
+          }
+        }
       } else {
         throw error;
       }
     }
-
-    // Update last login
-    await db.collection('users').doc(userRecord.uid).update({
-      lastLoginAt: Timestamp.now()
-    });
 
     // Create custom token for client
     const customToken = await auth.createCustomToken(userRecord.uid);

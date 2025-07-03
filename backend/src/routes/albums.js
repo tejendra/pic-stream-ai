@@ -217,10 +217,10 @@ router.post('/join/:shareToken', async (req, res) => {
     });
 
     // Update album member count
-    await db.collection('albums').doc(album.id).update({
-      memberCount: album.memberCount + 1,
+    await db.collection('albums').doc(album.id).set({
+      memberCount: (album.memberCount || 0) + 1,
       updatedAt: Timestamp.now()
-    });
+    }, { merge: true });
 
     res.json({
       message: 'Successfully joined album',

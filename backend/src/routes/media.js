@@ -108,9 +108,9 @@ router.get('/:fileId', async (req, res) => {
     }
 
     // Increment view count
-    await db.collection('media').doc(fileId).update({
-      views: media.views + 1
-    });
+    await db.collection('media').doc(fileId).set({
+      views: (media.views || 0) + 1
+    }, { merge: true });
 
     res.json({
       ...media,
@@ -225,10 +225,10 @@ router.delete('/:fileId', async (req, res) => {
     await db.collection('media').doc(fileId).delete();
 
     // Update album media count
-    await db.collection('albums').doc(media.albumId).update({
+    await db.collection('albums').doc(media.albumId).set({
       mediaCount: FieldValue.increment(-1),
       updatedAt: Timestamp.now()
-    });
+    }, { merge: true });
 
     res.json({ message: 'Media deleted successfully' });
   } catch (error) {
@@ -273,9 +273,9 @@ router.get('/:fileId/download', async (req, res) => {
     }
 
     // Increment download count
-    await db.collection('media').doc(fileId).update({
-      downloads: media.downloads + 1
-    });
+    await db.collection('media').doc(fileId).set({
+      downloads: (media.downloads || 0) + 1
+    }, { merge: true });
 
     // Get the original file from Firebase Storage
     console.log('Media filePath:', media.filePath);
