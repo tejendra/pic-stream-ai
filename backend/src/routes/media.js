@@ -16,8 +16,8 @@ router.get('/album/:albumId', async (req, res) => {
       .doc(`${albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
-      return res.status(403).json({ error: 'Access denied to this album' });
+    if (!memberDoc.exists) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     // Check if album has expired
@@ -91,7 +91,7 @@ router.get('/:fileId', async (req, res) => {
       .doc(`${media.albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -141,7 +141,7 @@ router.delete('/:fileId', async (req, res) => {
       .doc(`${media.albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -256,7 +256,7 @@ router.get('/:fileId/download', async (req, res) => {
       .doc(`${media.albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -363,7 +363,7 @@ router.post('/download-multiple', async (req, res) => {
         .doc(`${albumId}_${uid}`)
         .get();
 
-      if (!memberDoc.exists || !memberDoc.data().isActive) {
+      if (!memberDoc.exists) {
         return res.status(403).json({ error: 'Access denied to one or more albums' });
       }
 

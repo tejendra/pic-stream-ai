@@ -131,13 +131,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const api = createApiClient();
       const response = await api.post('/auth/verify-token', { token });
-      const { customToken } = response.data;
+      const { customToken, returnTo } = response.data;
       
       // Sign in with custom token
       await signInWithCustomToken(auth, customToken);
       
       toast.success('Login successful!');
-      return { success: true };
+      return { success: true, returnTo };
     } catch (error) {
       console.error('Verify token error:', error);
       let message = 'Login failed';

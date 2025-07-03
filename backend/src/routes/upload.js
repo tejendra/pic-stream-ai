@@ -5,6 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 const { bucket, db } = require('../config/firebase');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const path = require('path');
+const VideoProcessor = require('../utils/videoProcessor');
+const fs = require('fs');
+const os = require('os');
 
 const router = express.Router();
 
@@ -12,26 +15,51 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit
+    fileSize: 250 * 1024 * 1024, // 250MB limit (matching the route validation)
     files: 10 // Max 10 files at once
   },
   fileFilter: (req, file, cb) => {
     // Allow images and videos
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv'
+      'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv',
+      'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv', 'video/x-flv',
+      'video/webm', 'video/3gpp', 'video/3gpp2', 'video/x-matroska'
     ];
     
-    if (allowedTypes.includes(file.mimetype)) {
+    // Also check file extension as fallback
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.3gp', '.mkv'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    console.log('File upload attempt:', {
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      extension: fileExtension
+    });
+    
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type'), false);
+      console.log('File rejected:', {
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        extension: fileExtension
+      });
+      cb(new Error(`Invalid file type: ${file.mimetype} (${fileExtension})`), false);
     }
   }
 });
 
 // Upload single file to album
 router.post('/single', upload.single('file'), async (req, res) => {
+  // Handle multer errors
+  if (req.fileValidationError) {
+    return res.status(400).json({ error: req.fileValidationError });
+  }
+  
+  if (req.fileFilterError) {
+    return res.status(400).json({ error: req.fileFilterError.message });
+  }
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -49,7 +77,7 @@ router.post('/single', upload.single('file'), async (req, res) => {
       .doc(`${albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied to this album' });
     }
 
@@ -101,9 +129,10 @@ router.post('/single', upload.single('file'), async (req, res) => {
         
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-        // Generate thumbnails for images
+        // Generate thumbnails and previews
         let thumbnailUrl = null;
         let previewUrl = null;
+        let videoMetadata = null;
 
         if (file.mimetype.startsWith('image/')) {
           // Generate 400x400 thumbnail
@@ -137,6 +166,46 @@ router.post('/single', upload.single('file'), async (req, res) => {
           });
           await previewUpload.makePublic();
           previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+        } else if (file.mimetype.startsWith('video/')) {
+          // Process video files
+          const videoProcessor = new VideoProcessor();
+          
+          try {
+            // Get video metadata
+            videoMetadata = await videoProcessor.getVideoMetadata(file.buffer);
+            
+            // Generate thumbnail from first frame
+            const tempThumbnailPath = path.join(os.tmpdir(), `thumb_${fileId}.jpg`);
+            const thumbnailBuffer = await videoProcessor.generateThumbnail(file.buffer, tempThumbnailPath, 400, 400);
+            
+            const thumbnailFileName = `thumb_${fileId}.jpg`;
+            const thumbnailPath = `thumbnails/${albumId}/${thumbnailFileName}`;
+            const thumbnailUpload = bucket.file(thumbnailPath);
+            
+            await thumbnailUpload.save(thumbnailBuffer, {
+              metadata: { contentType: 'image/jpeg' }
+            });
+            await thumbnailUpload.makePublic();
+            thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbnailPath}`;
+
+            // Generate compressed preview video
+            const tempPreviewPath = path.join(os.tmpdir(), `preview_${fileId}.mp4`);
+            const previewBuffer = await videoProcessor.generatePreview(file.buffer, tempPreviewPath, 1280, 720, 1000);
+            
+            const previewFileName = `preview_${fileId}.mp4`;
+            const previewPath = `previews/${albumId}/${previewFileName}`;
+            const previewUpload = bucket.file(previewPath);
+            
+            await previewUpload.save(previewBuffer, {
+              metadata: { contentType: 'video/mp4' }
+            });
+            await previewUpload.makePublic();
+            previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+            
+          } catch (error) {
+            console.error('Video processing error:', error);
+            // Continue without thumbnail/preview if video processing fails
+          }
         }
 
         // Save metadata to Firestore
@@ -155,7 +224,14 @@ router.post('/single', upload.single('file'), async (req, res) => {
           albumId: albumId,
           uploadedAt: Timestamp.now(),
           views: 0,
-          downloads: 0
+          downloads: 0,
+          ...(videoMetadata && {
+            duration: videoMetadata.duration,
+            width: videoMetadata.width,
+            height: videoMetadata.height,
+            fps: videoMetadata.fps,
+            bitrate: videoMetadata.bitrate
+          })
         };
 
         await db.collection('media').doc(fileId).set(mediaDoc);
@@ -185,6 +261,14 @@ router.post('/single', upload.single('file'), async (req, res) => {
 
 // Upload multiple files to album
 router.post('/multiple', upload.array('files', 10), async (req, res) => {
+  // Handle multer errors
+  if (req.fileValidationError) {
+    return res.status(400).json({ error: req.fileValidationError });
+  }
+  
+  if (req.fileFilterError) {
+    return res.status(400).json({ error: req.fileFilterError.message });
+  }
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
@@ -202,7 +286,7 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
       .doc(`${albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied to this album' });
     }
 
@@ -251,9 +335,10 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
             await fileUpload.makePublic();
             const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
 
-            // Generate thumbnails for images
+            // Generate thumbnails and previews
             let thumbnailUrl = null;
             let previewUrl = null;
+            let videoMetadata = null;
 
             if (file.mimetype.startsWith('image/')) {
               // Generate 400x400 thumbnail
@@ -287,6 +372,46 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
               });
               await previewUpload.makePublic();
               previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+            } else if (file.mimetype.startsWith('video/')) {
+              // Process video files
+              const videoProcessor = new VideoProcessor();
+              
+              try {
+                // Get video metadata
+                videoMetadata = await videoProcessor.getVideoMetadata(file.buffer);
+                
+                // Generate thumbnail from first frame
+                const tempThumbnailPath = path.join(os.tmpdir(), `thumb_${fileId}.jpg`);
+                const thumbnailBuffer = await videoProcessor.generateThumbnail(file.buffer, tempThumbnailPath, 400, 400);
+                
+                const thumbnailFileName = `thumb_${fileId}.jpg`;
+                const thumbnailPath = `thumbnails/${albumId}/${thumbnailFileName}`;
+                const thumbnailUpload = bucket.file(thumbnailPath);
+                
+                await thumbnailUpload.save(thumbnailBuffer, {
+                  metadata: { contentType: 'image/jpeg' }
+                });
+                await thumbnailUpload.makePublic();
+                thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbnailPath}`;
+
+                // Generate compressed preview video
+                const tempPreviewPath = path.join(os.tmpdir(), `preview_${fileId}.mp4`);
+                const previewBuffer = await videoProcessor.generatePreview(file.buffer, tempPreviewPath, 1280, 720, 1000);
+                
+                const previewFileName = `preview_${fileId}.mp4`;
+                const previewPath = `previews/${albumId}/${previewFileName}`;
+                const previewUpload = bucket.file(previewPath);
+                
+                await previewUpload.save(previewBuffer, {
+                  metadata: { contentType: 'video/mp4' }
+                });
+                await previewUpload.makePublic();
+                previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+                
+              } catch (error) {
+                console.error('Video processing error:', error);
+                // Continue without thumbnail/preview if video processing fails
+              }
             }
 
             const mediaDoc = {
@@ -304,7 +429,14 @@ router.post('/multiple', upload.array('files', 10), async (req, res) => {
               albumId: albumId,
               uploadedAt: Timestamp.now(),
               views: 0,
-              downloads: 0
+              downloads: 0,
+              ...(videoMetadata && {
+                duration: videoMetadata.duration,
+                width: videoMetadata.width,
+                height: videoMetadata.height,
+                fps: videoMetadata.fps,
+                bitrate: videoMetadata.bitrate
+              })
             };
 
             await db.collection('media').doc(fileId).set(mediaDoc);

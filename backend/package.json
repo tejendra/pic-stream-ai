@@ -20,6 +20,7 @@
     "express-fileupload": "^1.4.3",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
+    "ffmpeg-static": "^5.2.0",
     "firebase-admin": "^12.0.0",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",

@@ -31,7 +31,7 @@ router.post('/send-login-link', [
       });
     }
 
-    const { email } = req.body;
+    const { email, returnTo } = req.body;
 
     // Generate unique token
     const token = uuidv4();
@@ -41,22 +41,25 @@ router.post('/send-login-link', [
     // Store token in Firestore
     await db.collection('loginTokens').doc(token).set({
       email,
+      returnTo,
       expiresAt: Timestamp.fromDate(expiresAt),
       used: false,
       createdAt: Timestamp.now()
     });
 
     // Create magic link
-    const magicLink = `${process.env.FRONTEND_URL}/login/verify?token=${token}`;
+    const magicLink = returnTo 
+      ? `${process.env.FRONTEND_URL}/login/verify?token=${token}&returnTo=${encodeURIComponent(returnTo)}`
+      : `${process.env.FRONTEND_URL}/login/verify?token=${token}`;
 
     // Send email with magic link
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Welcome to MomentDrop</h2>
+        <h2 style="color: #2563eb;">Welcome to PicStream</h2>
         <p>Click the button below to log in to your account:</p>
         <a href="${magicLink}" 
            style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">
-          Log In to MomentDrop
+          Log In to PicStream
         </a>
         <p style="color: #6b7280; font-size: 14px;">
           This link will expire in 15 minutes. If you didn't request this email, you can safely ignore it.
@@ -68,7 +71,7 @@ router.post('/send-login-link', [
       </div>
     `;
 
-    await sendEmail(email, 'Login to MomentDrop', emailHtml);
+    await sendEmail(email, 'Login to PicStream', emailHtml);
 
     res.json({ 
       message: 'Login link sent to your email',
@@ -153,6 +156,7 @@ router.post('/verify-token', [
     res.json({
       message: 'Login successful',
       customToken,
+      returnTo: tokenData.returnTo,
       user: {
         uid: userRecord.uid,
         email: userRecord.email,

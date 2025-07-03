@@ -15,7 +15,6 @@ exports.expireAlbums = functions.pubsub.schedule('every 24 hours').onRun(async (
     // Find all expired albums
     const expiredAlbumsSnapshot = await db.collection('albums')
       .where('expirationDate', '<', now)
-      .where('isActive', '==', true)
       .get();
 
     if (expiredAlbumsSnapshot.empty) {
@@ -32,18 +31,6 @@ exports.expireAlbums = functions.pubsub.schedule('every 24 hours').onRun(async (
     for (const albumDoc of expiredAlbumsSnapshot.docs) {
       const album = albumDoc.data();
       
-      // Mark album as inactive
-      batch.update(albumDoc.ref, { isActive: false });
-
-      // Mark all members as inactive
-      const membersSnapshot = await db.collection('albumMembers')
-        .where('albumId', '==', album.id)
-        .get();
-
-      membersSnapshot.docs.forEach(memberDoc => {
-        batch.update(memberDoc.ref, { isActive: false });
-      });
-
       // Get all media in the album
       const mediaSnapshot = await db.collection('media')
         .where('albumId', '==', album.id)
@@ -54,15 +41,18 @@ exports.expireAlbums = functions.pubsub.schedule('every 24 hours').onRun(async (
         const media = mediaDoc.data();
         
         // Delete original file
-        deletePromises.push(
-          bucket.file(media.filePath).delete().catch(err => 
-            console.log(`Failed to delete original file ${media.filePath}:`, err)
-          )
-        );
+        if (media.filePath) {
+          deletePromises.push(
+            bucket.file(media.filePath).delete().catch(err => 
+              console.log(`Failed to delete original file ${media.filePath}:`, err)
+            )
+          );
+        }
 
         // Delete thumbnail if exists
         if (media.thumbnailUrl) {
-          const thumbnailPath = media.thumbnailUrl.split('/').slice(-2).join('/');
+          const urlParts = media.thumbnailUrl.split('/');
+          const thumbnailPath = urlParts.slice(-3).join('/'); // Get last 3 parts (thumbnails/albumId/filename)
           deletePromises.push(
             bucket.file(thumbnailPath).delete().catch(err => 
               console.log(`Failed to delete thumbnail ${thumbnailPath}:`, err)
@@ -72,7 +62,8 @@ exports.expireAlbums = functions.pubsub.schedule('every 24 hours').onRun(async (
 
         // Delete preview if exists
         if (media.previewUrl) {
-          const previewPath = media.previewUrl.split('/').slice(-2).join('/');
+          const urlParts = media.previewUrl.split('/');
+          const previewPath = urlParts.slice(-3).join('/'); // Get last 3 parts (previews/albumId/filename)
           deletePromises.push(
             bucket.file(previewPath).delete().catch(err => 
               console.log(`Failed to delete preview ${previewPath}:`, err)
@@ -83,6 +74,18 @@ exports.expireAlbums = functions.pubsub.schedule('every 24 hours').onRun(async (
         // Delete media document
         batch.delete(mediaDoc.ref);
       });
+
+      // Delete all album members
+      const membersSnapshot = await db.collection('albumMembers')
+        .where('albumId', '==', album.id)
+        .get();
+
+      membersSnapshot.docs.forEach(memberDoc => {
+        batch.delete(memberDoc.ref);
+      });
+
+      // Delete the album document
+      batch.delete(albumDoc.ref);
 
       console.log(`Processed expired album: ${album.title} (${album.id})`);
     }
@@ -132,11 +135,72 @@ exports.manuallyExpireAlbum = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError('permission-denied', 'Only album admin can expire album');
     }
 
-    // Set expiration date to now
-    await albumDoc.ref.update({
-      expirationDate: admin.firestore.Timestamp.now(),
-      isActive: false
+    // Get all media in the album to delete files from storage
+    const mediaSnapshot = await db.collection('media')
+      .where('albumId', '==', albumId)
+      .get();
+
+    const deletePromises = [];
+
+    // Delete all media files from storage
+    mediaSnapshot.docs.forEach(mediaDoc => {
+      const media = mediaDoc.data();
+      
+      // Delete original file
+      if (media.filePath) {
+        deletePromises.push(
+          bucket.file(media.filePath).delete().catch(err => 
+            console.log(`Failed to delete original file ${media.filePath}:`, err)
+          )
+        );
+      }
+
+      // Delete thumbnail if exists
+      if (media.thumbnailUrl) {
+        const urlParts = media.thumbnailUrl.split('/');
+        const thumbnailPath = urlParts.slice(-3).join('/'); // Get last 3 parts (thumbnails/albumId/filename)
+        deletePromises.push(
+          bucket.file(thumbnailPath).delete().catch(err => 
+            console.log(`Failed to delete thumbnail ${thumbnailPath}:`, err)
+          )
+        );
+      }
+
+      // Delete preview if exists
+      if (media.previewUrl) {
+        const urlParts = media.previewUrl.split('/');
+        const previewPath = urlParts.slice(-3).join('/'); // Get last 3 parts (previews/albumId/filename)
+        deletePromises.push(
+          bucket.file(previewPath).delete().catch(err => 
+            console.log(`Failed to delete preview ${previewPath}:`, err)
+          )
+        );
+      }
     });
+
+    // Wait for all storage deletions to complete
+    await Promise.all(deletePromises);
+
+    // Delete all media documents
+    const batch = db.batch();
+    mediaSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete all album members
+    const membersSnapshot = await db.collection('albumMembers')
+      .where('albumId', '==', albumId)
+      .get();
+
+    membersSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete the album document
+    batch.delete(albumDoc.ref);
+
+    // Commit all deletions
+    await batch.commit();
 
     return { message: 'Album expired successfully' };
   } catch (error) {

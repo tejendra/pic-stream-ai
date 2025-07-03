@@ -31,10 +31,15 @@ const LoginVerify = () => {
           
           // Redirect after a short delay
           setTimeout(() => {
-            if (returnTo) {
+            if (result.returnTo) {
               // Decode the returnTo URL and navigate there
-              const decodedReturnTo = decodeURIComponent(returnTo);
+              const decodedReturnTo = decodeURIComponent(result.returnTo);
               console.log('Redirecting to:', decodedReturnTo);
+              navigate(decodedReturnTo);
+            } else if (returnTo) {
+              // Fallback to URL parameter if not in result
+              const decodedReturnTo = decodeURIComponent(returnTo);
+              console.log('Redirecting to (fallback):', decodedReturnTo);
               navigate(decodedReturnTo);
             } else {
               // Default redirect to dashboard

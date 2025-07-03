@@ -1,6 +1,6 @@
-### **Product Requirements Document: MomentDrop**
+### **Product Requirements Document: PicStream**
 
-**App Name:** **MomentDrop**
+**App Name:** **PicStream**
 **Version:** 1.0 (MVP)
 **Date:** [Current Date]
 **Author(s):** [Your Name]
@@ -10,13 +10,13 @@
 ### **1. Introduction & Vision**
 
 **1.1. Executive Summary:**
-MomentDrop is a web-based platform designed to help friends and family easily share photos and videos from shared events in their original, full quality. It replaces compressed, chaotic sharing in text message groups with temporary, collaborative albums.
+PicStream is a web-based platform designed to help friends and family easily share photos and videos from shared events in their original, full quality. It replaces compressed, chaotic sharing in text message groups with temporary, collaborative albums.
 
 **1.2. Problem Statement:**
 After a shared experience like a vacation, wedding, or party, groups struggle to consolidate their photos. Sharing through text messages heavily compresses media, ruining the quality. Existing cloud storage solutions are clunky for this purpose, create permanent digital clutter, and often require everyone to have the same app installed. There is no simple, event-based solution for temporary, high-quality media sharing that works seamlessly on the web.
 
 **1.3. Vision & Proposed Solution:**
-Our vision is to make sharing memories as high-quality and effortless as creating them. MomentDrop provides a simple web platform where a user can create a temporary, collaborative album. Friends are invited via a single, private link. Upon joining, they can upload their own photos and download anyone's contributions in full, original resolution. All content is automatically deleted after a set period, ensuring privacy and simplicity.
+Our vision is to make sharing memories as high-quality and effortless as creating them. PicStream provides a simple web platform where a user can create a temporary, collaborative album. Friends are invited via a single, private link. Upon joining, they can upload their own photos and download anyone's contributions in full, original resolution. All content is automatically deleted after a set period, ensuring privacy and simplicity.
 
 ---
 

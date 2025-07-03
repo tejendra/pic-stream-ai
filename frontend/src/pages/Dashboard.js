@@ -23,6 +23,9 @@ const Dashboard = () => {
   const [albumTitle, setAlbumTitle] = useState('');
   const [expirationDays, setExpirationDays] = useState('30');
   const [isCreating, setIsCreating] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
 
@@ -111,14 +114,30 @@ const Dashboard = () => {
     setIsCreating(false);
   };
 
-  const handleDeleteAlbum = async (albumId, albumTitle) => {
-    if (window.confirm(`Are you sure you want to delete "${albumTitle}"? This action cannot be undone.`)) {
-      try {
-        await deleteAlbum(albumId);
-      } catch (error) {
-        console.error('Failed to delete album:', error);
-      }
+  const handleDeleteAlbum = (albumId, albumTitle) => {
+    setAlbumToDelete({ id: albumId, title: albumTitle });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAlbum = async () => {
+    if (!albumToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteAlbum(albumToDelete.id);
+      setShowDeleteModal(false);
+      setAlbumToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete album:', error);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDeleteAlbum = () => {
+    setShowDeleteModal(false);
+    setAlbumToDelete(null);
+    setIsDeleting(false);
   };
 
   const handleShareAlbum = async (albumId) => {
@@ -408,6 +427,60 @@ const Dashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Album Modal */}
+      {showDeleteModal && albumToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Delete Album</h3>
+                <button
+                  onClick={cancelDeleteAlbum}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+                  Delete "{albumToDelete.title}"?
+                </h3>
+                <p className="text-sm text-gray-500 text-center">
+                  This action cannot be undone. The album and all its media will be permanently deleted.
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={cancelDeleteAlbum}
+                  disabled={isDeleting}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteAlbum}
+                  disabled={isDeleting}
+                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

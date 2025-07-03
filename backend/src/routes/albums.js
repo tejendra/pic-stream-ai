@@ -40,8 +40,7 @@ router.post('/', [
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       memberCount: 1,
-      mediaCount: 0,
-      isActive: true
+      mediaCount: 0
     };
 
     // Save album to Firestore
@@ -52,8 +51,7 @@ router.post('/', [
       albumId: albumData.id,
       userId: uid,
       role: 'admin', // admin, member
-      joinedAt: Timestamp.now(),
-      isActive: true
+      joinedAt: Timestamp.now()
     });
 
     res.status(201).json({
@@ -75,7 +73,6 @@ router.get('/', async (req, res) => {
     // Get albums where user is a member
     const membersSnapshot = await db.collection('albumMembers')
       .where('userId', '==', uid)
-      .where('isActive', '==', true)
       .get();
 
     const albumIds = membersSnapshot.docs.map(doc => doc.data().albumId);
@@ -91,7 +88,6 @@ router.get('/', async (req, res) => {
 
     // Get album details
     const albumsQuery = db.collection('albums')
-      .where('isActive', '==', true)
       .orderBy('updatedAt', 'desc');
 
     const albumsSnapshot = await albumsQuery.get();
@@ -99,7 +95,7 @@ router.get('/', async (req, res) => {
     const albums = albumsSnapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .filter(album => albumIds.includes(album.id))
-      .filter(album => album.expirationDate.toDate() > new Date()); // Only active albums
+      .filter(album => album.expirationDate.toDate() > new Date()); // Only non-expired albums
 
     // Paginate results
     const startIndex = (page - 1) * limit;
@@ -129,7 +125,7 @@ router.get('/:albumId', async (req, res) => {
       .doc(`${albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -153,7 +149,6 @@ router.get('/:albumId', async (req, res) => {
     // Get album members
     const membersSnapshot = await db.collection('albumMembers')
       .where('albumId', '==', albumId)
-      .where('isActive', '==', true)
       .get();
 
     const members = membersSnapshot.docs.map(doc => doc.data());
@@ -183,7 +178,6 @@ router.post('/join/:shareToken', async (req, res) => {
     // Find album by share token
     const albumsSnapshot = await db.collection('albums')
       .where('shareToken', '==', shareToken)
-      .where('isActive', '==', true)
       .limit(1)
       .get();
 
@@ -207,7 +201,7 @@ router.post('/join/:shareToken', async (req, res) => {
       .doc(`${album.id}_${uid}`)
       .get();
 
-    if (existingMember.exists && existingMember.data().isActive) {
+    if (existingMember.exists) {
       return res.status(409).json({ 
         error: 'You are already a member of this album',
         albumId: album.id
@@ -219,8 +213,7 @@ router.post('/join/:shareToken', async (req, res) => {
       albumId: album.id,
       userId: uid,
       role: 'member',
-      joinedAt: Timestamp.now(),
-      isActive: true
+      joinedAt: Timestamp.now()
     });
 
     // Update album member count
@@ -255,22 +248,72 @@ router.delete('/:albumId', async (req, res) => {
       return res.status(403).json({ error: 'Only album admin can delete album' });
     }
 
-    // Mark album as inactive
-    await db.collection('albums').doc(albumId).update({
-      isActive: false,
-      updatedAt: Timestamp.now()
+    // Get all media in the album to delete files from storage
+    const mediaSnapshot = await db.collection('media')
+      .where('albumId', '==', albumId)
+      .get();
+
+    const deletePromises = [];
+
+    // Delete all media files from storage
+    mediaSnapshot.docs.forEach(mediaDoc => {
+      const media = mediaDoc.data();
+      
+      // Delete original file
+      if (media.filePath) {
+        deletePromises.push(
+          bucket.file(media.filePath).delete().catch(err => 
+            console.log(`Failed to delete original file ${media.filePath}:`, err)
+          )
+        );
+      }
+
+      // Delete thumbnail if exists
+      if (media.thumbnailUrl) {
+        const urlParts = media.thumbnailUrl.split('/');
+        const thumbnailPath = urlParts.slice(-3).join('/'); // Get last 3 parts (thumbnails/albumId/filename)
+        deletePromises.push(
+          bucket.file(thumbnailPath).delete().catch(err => 
+            console.log(`Failed to delete thumbnail ${thumbnailPath}:`, err)
+          )
+        );
+      }
+
+      // Delete preview if exists
+      if (media.previewUrl) {
+        const urlParts = media.previewUrl.split('/');
+        const previewPath = urlParts.slice(-3).join('/'); // Get last 3 parts (previews/albumId/filename)
+        deletePromises.push(
+          bucket.file(previewPath).delete().catch(err => 
+            console.log(`Failed to delete preview ${previewPath}:`, err)
+          )
+        );
+      }
     });
 
-    // Mark all members as inactive
+    // Wait for all storage deletions to complete
+    await Promise.all(deletePromises);
+
+    // Delete all media documents
+    const mediaBatch = db.batch();
+    mediaSnapshot.docs.forEach(doc => {
+      mediaBatch.delete(doc.ref);
+    });
+
+    // Delete all album members
     const membersSnapshot = await db.collection('albumMembers')
       .where('albumId', '==', albumId)
       .get();
 
-    const batch = db.batch();
     membersSnapshot.docs.forEach(doc => {
-      batch.update(doc.ref, { isActive: false });
+      mediaBatch.delete(doc.ref);
     });
-    await batch.commit();
+
+    // Delete the album document
+    mediaBatch.delete(db.collection('albums').doc(albumId));
+
+    // Commit all deletions
+    await mediaBatch.commit();
 
     res.json({ message: 'Album deleted successfully' });
   } catch (error) {
@@ -290,7 +333,7 @@ router.get('/:albumId/share', async (req, res) => {
       .doc(`${albumId}_${uid}`)
       .get();
 
-    if (!memberDoc.exists || !memberDoc.data().isActive) {
+    if (!memberDoc.exists) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
