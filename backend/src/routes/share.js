@@ -2,7 +2,6 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../config/firebase');
 const { optionalAuth } = require('../middleware/auth');
-const bcrypt = require('bcrypt');
 const { bucket } = require('../config/firebase');
 const { Timestamp } = require('firebase-admin/firestore');
 
@@ -12,7 +11,7 @@ const router = express.Router();
 router.post('/generate', async (req, res) => {
   try {
     const { uid } = req.user;
-    const { fileId, expiresAt, password, allowDownload = true } = req.body;
+    const { fileId, expiresAt, allowDownload = true } = req.body;
 
     // Verify file exists and user owns it
     const mediaDoc = await db.collection('media').doc(fileId).get();
@@ -37,7 +36,6 @@ router.post('/generate', async (req, res) => {
       uploadedBy: uid,
       createdAt: Timestamp.now(),
       expiresAt: expiresAt ? Timestamp.fromDate(new Date(expiresAt)) : null,
-      password: password ? await bcrypt.hash(password, 10) : null,
       allowDownload,
       views: 0,
       downloads: 0,
@@ -66,7 +64,6 @@ router.post('/generate', async (req, res) => {
 router.get('/:shareToken', optionalAuth, async (req, res) => {
   try {
     const { shareToken } = req.params;
-    const { password } = req.query;
 
     // Find share record
     const sharesSnapshot = await db.collection('shares')
@@ -86,18 +83,6 @@ router.get('/:shareToken', optionalAuth, async (req, res) => {
     if (share.expiresAt && new Date() > share.expiresAt.toDate()) {
       await db.collection('shares').doc(share.id).update({ isActive: false });
       return res.status(410).json({ error: 'Share link has expired' });
-    }
-
-    // Check password if required
-    if (share.password && !password) {
-      return res.status(401).json({ error: 'Password required' });
-    }
-
-    if (share.password && password) {
-      const isValidPassword = await bcrypt.compare(password, share.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
     }
 
     // Get media file
@@ -134,7 +119,6 @@ router.get('/:shareToken', optionalAuth, async (req, res) => {
 router.get('/:shareToken/download', async (req, res) => {
   try {
     const { shareToken } = req.params;
-    const { password } = req.query;
 
     // Find share record
     const sharesSnapshot = await db.collection('shares')
@@ -159,18 +143,6 @@ router.get('/:shareToken/download', async (req, res) => {
     // Check if downloads are allowed
     if (!share.allowDownload) {
       return res.status(403).json({ error: 'Downloads not allowed for this share' });
-    }
-
-    // Check password if required
-    if (share.password && !password) {
-      return res.status(401).json({ error: 'Password required' });
-    }
-
-    if (share.password && password) {
-      const isValidPassword = await bcrypt.compare(password, share.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
     }
 
     // Get media file
@@ -267,7 +239,7 @@ router.put('/:shareId', async (req, res) => {
   try {
     const { shareId } = req.params;
     const { uid } = req.user;
-    const { expiresAt, password, allowDownload, isActive } = req.body;
+    const { expiresAt, allowDownload, isActive } = req.body;
 
     const shareDoc = await db.collection('shares').doc(shareId).get();
     if (!shareDoc.exists) {
@@ -281,9 +253,6 @@ router.put('/:shareId', async (req, res) => {
 
     const updateData = {};
     if (expiresAt !== undefined) updateData.expiresAt = Timestamp.fromDate(new Date(expiresAt));
-    if (password !== undefined) {
-      updateData.password = password ? await bcrypt.hash(password, 10) : null;
-    }
     if (allowDownload !== undefined) updateData.allowDownload = allowDownload;
     if (isActive !== undefined) updateData.isActive = isActive;
     
