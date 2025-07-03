@@ -1,60 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { useAlbums } from '../hooks';
 import { 
   Image, 
-  Share2, 
   Calendar,
-  HardDrive,
   Plus,
   Users,
   Clock,
-  Trash2
+  Trash2,
+  Share2,
+  Copy
 } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import createApiClient from '../utils/apiClient';
 
 const Dashboard = () => {
-  const { user } = useAuth();
   const { albums, loading, error, createAlbum, deleteAlbum } = useAlbums();
+  const [shareUrl, setShareUrl] = useState('');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [albumTitle, setAlbumTitle] = useState('');
+  const [expirationDays, setExpirationDays] = useState('30');
+  const [isCreating, setIsCreating] = useState(false);
 
 
 
   const formatDate = (date) => {
-    if (!date || typeof date.toDate !== 'function') {
-      console.error('Invalid Firestore Timestamp:', date);
+    if (!date) {
       return 'Invalid Date';
     }
-    return date.toDate().toLocaleDateString();
+    
+    let dateObj;
+    if (typeof date.toDate === 'function') {
+      // Firestore Timestamp object
+      dateObj = date.toDate();
+    } else if (date._seconds) {
+      // Plain object with _seconds and _nanoseconds
+      dateObj = new Date(date._seconds * 1000);
+    } else if (date instanceof Date) {
+      // JavaScript Date object
+      dateObj = date;
+    } else {
+      console.error('Invalid date format:', date);
+      return 'Invalid Date';
+    }
+    
+    return dateObj.toLocaleDateString();
   };
 
   const getDaysUntilExpiry = (expirationDate) => {
-    if (!expirationDate || typeof expirationDate.toDate !== 'function') {
-      console.error('Invalid Firestore Timestamp for expiration:', expirationDate);
+    if (!expirationDate) {
       return -1; // Treat as expired
     }
+    
+    let expiryDate;
+    if (typeof expirationDate.toDate === 'function') {
+      // Firestore Timestamp object
+      expiryDate = expirationDate.toDate();
+    } else if (expirationDate._seconds) {
+      // Plain object with _seconds and _nanoseconds
+      expiryDate = new Date(expirationDate._seconds * 1000);
+    } else if (expirationDate instanceof Date) {
+      // JavaScript Date object
+      expiryDate = expirationDate;
+    } else {
+      console.error('Invalid expiration date format:', expirationDate);
+      return -1; // Treat as expired
+    }
+    
     const now = new Date();
-    const expiry = expirationDate.toDate();
-    const diffTime = expiry - now;
+    const diffTime = expiryDate - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
-  const handleCreateAlbum = async () => {
-    const title = prompt('Enter album title:');
-    if (title) {
-      const expirationDays = prompt('Enter expiration days (14, 30, or 60):', '30');
-      const days = parseInt(expirationDays);
-      if ([14, 30, 60].includes(days)) {
-        try {
-          await createAlbum(title, days);
-        } catch (error) {
-          console.error('Failed to create album:', error);
-        }
-      } else {
-        alert('Please enter 14, 30, or 60 days');
-      }
+  const handleCreateAlbum = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCreateAlbumSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!albumTitle.trim()) {
+      return;
     }
+
+    const days = parseInt(expirationDays);
+    if (![14, 30, 60].includes(days)) {
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await createAlbum(albumTitle.trim(), days);
+      setShowCreateModal(false);
+      setAlbumTitle('');
+      setExpirationDays('30');
+    } catch (error) {
+      console.error('Failed to create album:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setAlbumTitle('');
+    setExpirationDays('30');
+    setIsCreating(false);
   };
 
   const handleDeleteAlbum = async (albumId, albumTitle) => {
@@ -64,6 +118,29 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Failed to delete album:', error);
       }
+    }
+  };
+
+  const handleShareAlbum = async (albumId) => {
+    try {
+      const api = createApiClient();
+      const response = await api.get(`/albums/${albumId}/share`);
+      
+      setShareUrl(response.data.shareUrl);
+      setShowShareModal(true);
+    } catch (error) {
+      console.error('Error getting share link:', error);
+      alert('Failed to get share link');
+    }
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
@@ -92,7 +169,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome to MomentDrop, {user?.displayName || 'User'}!
+            Welcome to PicStream!
           </h1>
           <p className="mt-2 text-gray-600">
             Create and manage your temporary photo sharing albums
@@ -112,88 +189,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <HardDrive className="h-6 w-6 text-gray-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Albums
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {albums.length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Image className="h-6 w-6 text-blue-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Active Albums
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {albums.filter(album => getDaysUntilExpiry(album.expirationDate) > 0).length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Users className="h-6 w-6 text-green-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Members
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {albums.reduce((sum, album) => sum + (album.memberCount || 0), 0)}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Share2 className="h-6 w-6 text-purple-400" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Media
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {albums.reduce((sum, album) => sum + (album.mediaCount || 0), 0)}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Albums List */}
         <div className="bg-white shadow rounded-lg">
@@ -231,13 +227,22 @@ const Dashboard = () => {
                         <h4 className="text-lg font-medium text-gray-900 truncate">
                           {album.title}
                         </h4>
-                        <button
-                          onClick={() => handleDeleteAlbum(album.id, album.title)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Delete album"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => handleShareAlbum(album.id)}
+                            className="text-gray-400 hover:text-blue-500 transition-colors"
+                            title="Share album"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAlbum(album.id, album.title)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            title="Delete album"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="space-y-2 text-sm text-gray-600">
@@ -265,18 +270,12 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-4">
                         <Link
                           to={`/album/${album.id}`}
-                          className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                           View Album
-                        </Link>
-                        <Link
-                          to={`/upload?albumId=${album.id}`}
-                          className="inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <Plus className="h-4 w-4" />
                         </Link>
                       </div>
                     </div>
@@ -287,6 +286,132 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Share Album</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Share Link
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={shareUrl}
+                    readOnly
+                    className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(shareUrl)}
+                    className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+                {copied && (
+                  <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Album Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Create New Album</h3>
+                <button
+                  onClick={closeCreateModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <form onSubmit={handleCreateAlbumSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="albumTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                    Album Title
+                  </label>
+                  <input
+                    type="text"
+                    id="albumTitle"
+                    value={albumTitle}
+                    onChange={(e) => setAlbumTitle(e.target.value)}
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Enter album title"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="expirationDays" className="block text-sm font-medium text-gray-700 mb-2">
+                    Expiration Days
+                  </label>
+                  <select
+                    id="expirationDays"
+                    value={expirationDays}
+                    onChange={(e) => setExpirationDays(e.target.value)}
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    required
+                  >
+                    <option value="14">14 days</option>
+                    <option value="30">30 days</option>
+                    <option value="60">60 days</option>
+                  </select>
+                </div>
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeCreateModal}
+                    className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isCreating || !albumTitle.trim()}
+                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreating ? 'Creating...' : 'Create Album'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

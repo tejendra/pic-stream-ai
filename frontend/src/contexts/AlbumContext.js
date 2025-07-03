@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
-import axios from 'axios';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import createApiClient from '../utils/apiClient';
 
 const AlbumContext = createContext();
 
@@ -14,7 +14,7 @@ export const useAlbum = () => {
 };
 
 export const AlbumProvider = ({ children }) => {
-  const { user, refreshToken } = useAuth();
+  const { user } = useAuth();
   const [albums, setAlbums] = useState([]);
   const [currentAlbum, setCurrentAlbum] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,48 +25,13 @@ export const AlbumProvider = ({ children }) => {
     pages: 0
   });
 
-  // Create axios instance with auth token
-  const createApiClient = () => {
-    const client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-      timeout: 30000
-    });
-
-    // Add auth token to requests
-    client.interceptors.request.use((config) => {
-      if (user?.token) {
-        config.headers.Authorization = `Bearer ${user.token}`;
-      }
-      return config;
-    });
-
-    // Handle token refresh on 401 errors
-    client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (error.response?.status === 401) {
-          try {
-            const newToken = await refreshToken();
-            if (newToken) {
-              error.config.headers.Authorization = `Bearer ${newToken}`;
-              return client.request(error.config);
-            }
-          } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return client;
-  };
+  // Use centralized API client
+  const api = createApiClient();
 
   // Fetch user's albums
   const fetchAlbums = async (page = 1, limit = 20) => {
     setLoading(true);
     try {
-      const api = createApiClient();
       const response = await api.get('/albums', {
         params: { page, limit }
       });
@@ -86,7 +51,6 @@ export const AlbumProvider = ({ children }) => {
   // Create new album
   const createAlbum = async (title, expirationDays = 30) => {
     try {
-      const api = createApiClient();
       const response = await api.post('/albums', {
         title,
         expirationDays
@@ -108,7 +72,6 @@ export const AlbumProvider = ({ children }) => {
   // Get specific album details
   const getAlbum = async (albumId) => {
     try {
-      const api = createApiClient();
       const response = await api.get(`/albums/${albumId}`);
       
       setCurrentAlbum(response.data.album);
@@ -129,13 +92,21 @@ export const AlbumProvider = ({ children }) => {
   // Join album via share token
   const joinAlbum = async (shareToken) => {
     try {
-      const api = createApiClient();
+      console.log('AlbumContext joinAlbum - shareToken:', shareToken);
+      console.log('User token:', user?.token);
+      
+      console.log('API client created, making request to:', `/albums/join/${shareToken}`);
+      
       const response = await api.post(`/albums/join/${shareToken}`);
+      console.log('Join album response:', response.data);
       
       toast.success('Successfully joined album!');
       return response.data;
     } catch (error) {
       console.error('Join album error:', error);
+      console.error('Error response data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
       if (error.response?.status === 410) {
         toast.error('This album has expired');
       } else if (error.response?.status === 409) {
@@ -151,7 +122,6 @@ export const AlbumProvider = ({ children }) => {
   // Delete album (admin only)
   const deleteAlbum = async (albumId) => {
     try {
-      const api = createApiClient();
       await api.delete(`/albums/${albumId}`);
       
       toast.success('Album deleted successfully');

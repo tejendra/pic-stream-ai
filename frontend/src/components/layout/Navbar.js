@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  Camera, 
+  Camera,
   User, 
   LogOut, 
   Menu, 
-  X, 
-  Settings
+  X
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -17,15 +16,20 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    try {
+      await logout();
+      // Force navigation to home page
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still try to navigate even if logout fails
+      window.location.href = '/';
+    }
   };
 
   const isActive = (path) => location.pathname === path;
 
-  const navItems = user ? [
-    { path: '/dashboard', label: 'Dashboard', icon: Camera }
-  ] : [];
+  const navItems = [];
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-200">
@@ -81,22 +85,13 @@ const Navbar = () => {
                   </span>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/profile"
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                    title="Profile"
-                  >
-                    <Settings className="h-5 w-5" />
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                    title="Logout"
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </button>
-                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                  title="Logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
             ) : (
               <div className="hidden md:flex md:items-center md:space-x-4">
@@ -168,14 +163,7 @@ const Navbar = () => {
                   </span>
                 </div>
                 
-                <Link
-                  to="/profile"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Settings className="h-5 w-5 mr-3" />
-                  Profile
-                </Link>
+
                 
                 <button
                   onClick={() => {

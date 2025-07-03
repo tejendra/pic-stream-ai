@@ -7,22 +7,35 @@ import { CheckCircle, XCircle, Loader, Users, Calendar } from 'lucide-react';
 const JoinAlbum = () => {
   const { shareToken } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { joinAlbum } = useAlbum();
   const [status, setStatus] = useState('loading'); // loading, success, error, expired
   const [album, setAlbum] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log('JoinAlbum useEffect - user:', user, 'loading:', loading, 'shareToken:', shareToken);
+    
+    if (loading) {
+      // Still determining auth state, do nothing yet
+      return;
+    }
+
     if (!user) {
-      // If not logged in, redirect to login with return URL
-      navigate(`/login?returnTo=/join/${shareToken}`);
+      console.log('User not logged in, redirecting to home');
+      // If not logged in, redirect to home page with return URL
+      navigate(`/?returnTo=/join/${shareToken}`);
       return;
     }
 
     const handleJoinAlbum = async () => {
       try {
+        console.log('Attempting to join album with token:', shareToken);
+        console.log('User token available:', !!user.token);
+        
         const result = await joinAlbum(shareToken);
+        console.log('Join album result:', result);
+        
         setAlbum(result.album);
         setStatus('success');
         
@@ -32,6 +45,7 @@ const JoinAlbum = () => {
         }, 2000);
       } catch (error) {
         console.error('Join album error:', error);
+        console.error('Error response:', error.response);
         
         if (error.message?.includes('expired')) {
           setStatus('expired');
@@ -44,7 +58,7 @@ const JoinAlbum = () => {
     };
 
     handleJoinAlbum();
-  }, [shareToken, user, navigate, joinAlbum]);
+  }, [shareToken, user, loading, navigate, joinAlbum]);
 
   if (status === 'loading') {
     return (
@@ -87,9 +101,19 @@ const JoinAlbum = () => {
                   </div>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
-                    Expires {album.expirationDate && typeof album.expirationDate.toDate === 'function' 
-                      ? album.expirationDate.toDate().toLocaleDateString()
-                      : 'Invalid Date'}
+                    Expires {album.expirationDate ? (() => {
+                      let expiryDate;
+                      if (typeof album.expirationDate.toDate === 'function') {
+                        expiryDate = album.expirationDate.toDate();
+                      } else if (album.expirationDate._seconds) {
+                        expiryDate = new Date(album.expirationDate._seconds * 1000);
+                      } else if (album.expirationDate instanceof Date) {
+                        expiryDate = album.expirationDate;
+                      } else {
+                        return 'Invalid Date';
+                      }
+                      return expiryDate.toLocaleDateString();
+                    })() : 'Invalid Date'}
                   </div>
                 </div>
               </div>

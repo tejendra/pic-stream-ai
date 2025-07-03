@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMedia } from '../contexts/MediaContext';
+import axios from 'axios';
 import { 
-  Download, 
+  Download,
   Share2, 
-  Eye, 
   Calendar, 
   User, 
   Tag, 
@@ -18,7 +17,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 const ShareView = () => {
   const { shareId } = useParams();
   const navigate = useNavigate();
-  const { getSharedMedia, loading } = useMedia();
+  const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState(null);
   const [password, setPassword] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -28,10 +27,11 @@ const ShareView = () => {
   useEffect(() => {
     const fetchSharedMedia = async () => {
       try {
-        const result = await getSharedMedia(shareId);
-        if (result.success) {
-          setMedia(result.data);
-          if (result.data.isPasswordProtected) {
+        setLoading(true);
+        const response = await axios.get(`/api/share/${shareId}`);
+        if (response.data.success) {
+          setMedia(response.data.data);
+          if (response.data.data.isPasswordProtected) {
             setShowPasswordForm(true);
           }
         } else {
@@ -40,20 +40,22 @@ const ShareView = () => {
       } catch (error) {
         console.error('Error fetching shared media:', error);
         navigate('/');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSharedMedia();
-  }, [shareId, getSharedMedia, navigate]);
+  }, [shareId, navigate]);
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPasswordError('');
 
     try {
-      const result = await getSharedMedia(shareId, password);
-      if (result.success) {
-        setMedia(result.data);
+      const response = await axios.post(`/api/share/${shareId}`, { password });
+      if (response.data.success) {
+        setMedia(response.data.data);
         setShowPasswordForm(false);
       } else {
         setPasswordError('Incorrect password');
@@ -263,20 +265,7 @@ const ShareView = () => {
                   </dt>
                   <dd className="text-sm text-gray-900">{formatDate(media.uploadedAt)}</dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Views
-                  </dt>
-                  <dd className="text-sm text-gray-900">{media.views || 0}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Download className="h-4 w-4 mr-2" />
-                    Downloads
-                  </dt>
-                  <dd className="text-sm text-gray-900">{media.downloads || 0}</dd>
-                </div>
+
                 <div className="flex items-center justify-between">
                   <dt className="text-sm font-medium text-gray-500">File size</dt>
                   <dd className="text-sm text-gray-900">{formatFileSize(media.size)}</dd>

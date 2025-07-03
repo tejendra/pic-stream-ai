@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useMedia } from '../contexts/MediaContext';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { 
   Upload as UploadIcon, 
   X, 
@@ -12,12 +13,12 @@ import {
 } from 'lucide-react';
 
 const InlineUpload = ({ albumId, onUploadComplete }) => {
+  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [isOpen, setIsOpen] = useState(false);
   const fileInputRef = useRef(null);
-  const { uploadMultipleFiles } = useMedia();
 
   const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -80,7 +81,19 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
       });
 
       // Upload all files at once
-      await uploadMultipleFiles(files.map(f => f.file), albumId);
+      const formData = new FormData();
+      formData.append('albumId', albumId);
+      
+      files.forEach((fileData, index) => {
+        formData.append('files', fileData.file);
+      });
+
+      await axios.post('/api/upload/multiple', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
 
       // Mark all files as completed
       files.forEach(fileData => {
@@ -156,8 +169,14 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
     }
   };
 
-  if (!isOpen) {
-    return (
+  const closeModal = () => {
+    setIsOpen(false);
+    setFiles([]);
+    setUploadProgress({});
+  };
+
+  return (
+    <>
       <button
         onClick={() => setIsOpen(true)}
         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -165,124 +184,120 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
         <Plus className="h-4 w-4 mr-2" />
         Add Photos
       </button>
-    );
-  }
 
-  return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Add Photos to Album</h3>
-        <button
-          onClick={() => {
-            setIsOpen(false);
-            setFiles([]);
-            setUploadProgress({});
-          }}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* File Upload Area */}
-        <div>
-          <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">
-                Drag and drop files here, or{' '}
-                <span className="text-blue-600 hover:text-blue-500 font-medium">
-                  click to browse
-                </span>
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max: 250MB per file)
-              </p>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">Add Photos to Album</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*,video/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-        </div>
 
-        {/* Selected Files */}
-        {files.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Files ({files.length})</h4>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {files.map((fileData) => (
-                <div key={fileData.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center flex-1 min-w-0">
-                    {fileData.preview ? (
-                      <img
-                        src={fileData.preview}
-                        alt={fileData.name}
-                        className="h-8 w-8 object-cover rounded mr-2"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 bg-gray-200 rounded mr-2 flex items-center justify-center">
-                        {getFileIcon(fileData.type)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{fileData.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(fileData.size)}</p>
+            <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* File Upload Area */}
+                <div>
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600">
+                        Drag and drop files here, or{' '}
+                        <span className="text-blue-600 hover:text-blue-500 font-medium">
+                          click to browse
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max: 250MB per file)
+                      </p>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {getProgressStatus(fileData.id)}
-                    <button
-                      type="button"
-                      onClick={() => removeFile(fileData.id)}
-                      className="text-gray-400 hover:text-red-500"
-                      disabled={uploading}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
                   </div>
                 </div>
-              ))}
+
+                {/* Selected Files */}
+                {files.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Files ({files.length})</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {files.map((fileData) => (
+                        <div key={fileData.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div className="flex items-center flex-1 min-w-0">
+                            {fileData.preview ? (
+                              <img
+                                src={fileData.preview}
+                                alt={fileData.name}
+                                className="h-8 w-8 object-cover rounded mr-2"
+                              />
+                            ) : (
+                              <div className="h-8 w-8 bg-gray-200 rounded mr-2 flex items-center justify-center">
+                                {getFileIcon(fileData.type)}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{fileData.name}</p>
+                              <p className="text-xs text-gray-500">{formatFileSize(fileData.size)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {getProgressStatus(fileData.id)}
+                            <button
+                              type="button"
+                              onClick={() => removeFile(fileData.id)}
+                              className="text-gray-400 hover:text-red-500"
+                              disabled={uploading}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                {files.length > 0 && (
+                  <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      disabled={uploading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={uploading || files.length === 0}
+                      className="w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
+                    </button>
+                  </div>
+                )}
+              </form>
             </div>
           </div>
-        )}
-
-        {/* Upload Button */}
-        {files.length > 0 && (
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                setFiles([]);
-                setUploadProgress({});
-              }}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={uploading || files.length === 0}
-              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
-            </button>
-          </div>
-        )}
-      </form>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

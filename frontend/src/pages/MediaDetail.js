@@ -1,6 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useMediaDetails } from '../hooks';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { 
   Download, 
   Calendar, 
@@ -12,7 +14,40 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 const MediaDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { media, loading, error, download } = useMediaDetails(id);
+  const { user, loading: authLoading } = useAuth();
+
+  const { data: media, isLoading: loading, error } = useQuery({
+    queryKey: ['media', id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/media/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      return response.data;
+    },
+    enabled: !!user && !!user.token && !!id && !authLoading
+  });
+
+  const download = async () => {
+    try {
+      // Download the original file directly from the API
+      const response = await axios.get(`/api/media/${id}/download`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', media.originalName || 'download');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -23,11 +58,26 @@ const MediaDetail = () => {
   };
 
   const formatDate = (date) => {
-    if (!date || typeof date.toDate !== 'function') {
-      console.error('Invalid Firestore Timestamp:', date);
+    if (!date) {
       return 'Invalid Date';
     }
-    return date.toDate().toLocaleDateString('en-US', {
+    
+    let dateObj;
+    if (typeof date.toDate === 'function') {
+      // Firestore Timestamp object
+      dateObj = date.toDate();
+    } else if (date._seconds) {
+      // Plain object with _seconds and _nanoseconds
+      dateObj = new Date(date._seconds * 1000);
+    } else if (date instanceof Date) {
+      // JavaScript Date object
+      dateObj = date;
+    } else {
+      console.error('Invalid date format:', date);
+      return 'Invalid Date';
+    }
+    
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -44,7 +94,7 @@ const MediaDetail = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -57,7 +107,9 @@ const MediaDetail = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-red-600 mb-2">Media Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'The requested media could not be found.'}</p>
+          <p className="text-gray-600 mb-4">
+            {error ? (error.message || 'An error occurred while loading the media.') : 'The requested media could not be found.'}
+          </p>
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -82,7 +134,7 @@ const MediaDetail = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Album
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{media.title || 'Untitled'}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{media.originalName || 'Untitled'}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -91,15 +143,16 @@ const MediaDetail = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               {media.mimeType?.startsWith('image/') ? (
                 <img
-                  src={media.previewUrl || media.url}
-                  alt={media.title || 'Image'}
+                  src={media.previewUrl || media.publicUrl}
+                  alt={media.originalName || 'Image'}
                   className="w-full h-auto max-h-96 object-contain"
                 />
               ) : (
                 <video
-                  src={media.url}
+                  src={media.previewUrl || media.publicUrl}
                   controls
                   className="w-full h-auto max-h-96"
+                  preload="metadata"
                 >
                   Your browser does not support the video tag.
                 </video>
@@ -132,7 +185,7 @@ const MediaDetail = () => {
                     <User className="h-4 w-4 mr-2" />
                     Uploaded by
                   </dt>
-                  <dd className="text-sm text-gray-900">{media.uploadedBy?.displayName || 'Unknown'}</dd>
+                  <dd className="text-sm text-gray-900">{media.uploadedByEmail || 'Unknown'}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt className="text-sm font-medium text-gray-500 flex items-center">

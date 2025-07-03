@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Camera, ArrowRight, Mail, Send, X } from 'lucide-react';
 
@@ -12,17 +12,37 @@ const funShapes = [
 
 const Home = () => {
   const { user, sendLoginLink } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
+
+  // Check if user is being invited to join an album
+  const params = new URLSearchParams(location.search);
+  const returnTo = params.get('returnTo');
+  const isInvitedToJoin = returnTo && returnTo.startsWith('/join/');
+
+  // Handle returnTo parameter after login
+  useEffect(() => {
+    if (user) {
+      if (returnTo) {
+        navigate(returnTo);
+      }
+    }
+  }, [user, returnTo, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const result = await sendLoginLink(email);
+      // Get returnTo parameter from URL
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo');
+      
+      const result = await sendLoginLink(email, returnTo);
       if (result.success) {
         setLinkSent(true);
       }
@@ -56,12 +76,29 @@ const Home = () => {
               <Camera className="h-12 w-12 text-blue-600" />
             </span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
-            Drop Moments. <span className="text-yellow-300">Share Joy.</span>
-          </h1>
-          <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-xl mx-auto font-medium">
-            The easiest, happiest way to share photos & videos from any event. No logins, no clutter, just pure fun. 🎉
-          </p>
+          
+          {isInvitedToJoin ? (
+            <>
+              <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
+                You're invited! 🎉
+              </h1>
+              <p className="text-lg md:text-2xl text-white/90 mb-6 max-w-xl mx-auto font-medium">
+                Someone wants to share photos with you on PicStream
+              </p>
+              <p className="text-lg text-white/80 mb-10 max-w-lg mx-auto">
+                Sign in to join the album and start sharing memories together
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
+                Stream Photos. <span className="text-yellow-300">Share Memories.</span>
+              </h1>
+              <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-xl mx-auto font-medium">
+                The easiest way to share photos & videos from any event 🎉
+              </p>
+            </>
+          )}
           
           {/* Login Form or Button */}
           <div className="flex flex-col items-center justify-center">
@@ -70,7 +107,7 @@ const Home = () => {
                 onClick={() => setShowLoginForm(true)}
                 className="bg-white bg-opacity-80 text-blue-700 px-8 py-4 rounded-full font-bold text-lg shadow hover:bg-opacity-100 transition-colors duration-200 flex items-center justify-center"
               >
-                Login
+                {isInvitedToJoin ? 'Sign In to Join' : 'Login'}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             )}
@@ -78,7 +115,9 @@ const Home = () => {
             {!user && showLoginForm && !linkSent && (
               <div className="bg-white bg-opacity-95 rounded-2xl p-8 shadow-xl max-w-md w-full">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Welcome to MomentDrop</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {isInvitedToJoin ? 'Join the Album' : 'Welcome to PicStream'}
+                  </h2>
                   <button
                     onClick={resetForm}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -87,7 +126,10 @@ const Home = () => {
                   </button>
                 </div>
                 <p className="text-gray-600 mb-6 text-center">
-                  Enter your email to receive a secure login link
+                  {isInvitedToJoin 
+                    ? 'Enter your email to receive a secure login link and join the album'
+                    : 'Enter your email to receive a secure login link'
+                  }
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="relative">
@@ -130,7 +172,7 @@ const Home = () => {
                     We've sent a login link to <strong>{email}</strong>
                   </p>
                   <p className="text-sm text-gray-500 mb-6">
-                    Click the link in your email to sign in to MomentDrop. The link will expire in 15 minutes.
+                    Click the link in your email to sign in to PicStream. The link will expire in 15 minutes.
                   </p>
                   <button
                     onClick={resetForm}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   getAuth, 
   signInWithCustomToken,
@@ -7,7 +7,7 @@ import {
 import { initializeApp } from 'firebase/app';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import createApiClient from '../utils/apiClient';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -43,14 +43,42 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       // Get the ID token for API calls
       user.getIdToken().then((token) => {
-        setCustomUser({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          token
+        setCustomUser(prev => {
+          const newUser = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            token
+          };
+          
+          // Only update if the user data has actually changed
+          if (!prev || 
+              prev.uid !== newUser.uid || 
+              prev.email !== newUser.email || 
+              prev.token !== newUser.token) {
+            return newUser;
+          }
+          return prev;
         });
       });
+
+      // Set up token refresh listener
+      const unsubscribe = auth.onIdTokenChanged(async (user) => {
+        if (user) {
+          try {
+            const token = await user.getIdToken();
+            setCustomUser(prev => ({
+              ...prev,
+              token
+            }));
+          } catch (error) {
+            console.error('Token refresh error:', error);
+          }
+        }
+      });
+
+      return () => unsubscribe();
     } else {
       setCustomUser(null);
     }
@@ -64,9 +92,26 @@ export const AuthProvider = ({ children }) => {
     }
   }, [error]);
 
-  const sendLoginLink = async (email) => {
+  // Set up automatic token refresh
+  useEffect(() => {
+    if (user) {
+      // Refresh token every 50 minutes (tokens expire after 1 hour)
+      const refreshInterval = setInterval(async () => {
+        try {
+          await user.getIdToken(true);
+        } catch (error) {
+          console.error('Automatic token refresh failed:', error);
+        }
+      }, 50 * 60 * 1000); // 50 minutes
+
+      return () => clearInterval(refreshInterval);
+    }
+  }, [user]);
+
+  const sendLoginLink = useCallback(async (email, returnTo) => {
     try {
-      const response = await axios.post('/api/auth/send-login-link', { email });
+      const api = createApiClient();
+      await api.post('/auth/send-login-link', { email, returnTo });
       toast.success('Login link sent to your email!');
       return { success: true };
     } catch (error) {
@@ -80,15 +125,16 @@ export const AuthProvider = ({ children }) => {
       toast.error(message);
       return { success: false, error: message };
     }
-  };
+  }, []);
 
-  const verifyLoginToken = async (token) => {
+  const verifyLoginToken = useCallback(async (token) => {
     try {
-      const response = await axios.post('/api/auth/verify-token', { token });
-      const { customToken, user } = response.data;
+      const api = createApiClient();
+      const response = await api.post('/auth/verify-token', { token });
+      const { customToken } = response.data;
       
       // Sign in with custom token
-      const userCredential = await signInWithCustomToken(auth, customToken);
+      await signInWithCustomToken(auth, customToken);
       
       toast.success('Login successful!');
       return { success: true };
@@ -103,19 +149,20 @@ export const AuthProvider = ({ children }) => {
       toast.error(message);
       return { success: false, error: message };
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await signOut(auth);
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed');
+      throw error;
     }
-  };
+  }, []);
 
-  const refreshToken = async () => {
+  const refreshToken = useCallback(async () => {
     try {
       if (auth.currentUser) {
         const token = await auth.currentUser.getIdToken(true);
@@ -128,11 +175,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Token refresh error:', error);
       // If token refresh fails, user might need to re-authenticate
-      logout();
+      await signOut(auth);
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     user: customUser,
     loading,
     error,
@@ -140,7 +187,19 @@ export const AuthProvider = ({ children }) => {
     verifyLoginToken,
     logout,
     refreshToken
-  };
+  }), [customUser, loading, error, sendLoginLink, verifyLoginToken, logout, refreshToken]);
+
+  console.log('AuthContext value recreated:', { 
+    customUserUid: customUser?.uid, 
+    loading, 
+    error: !!error,
+    functionRefs: {
+      sendLoginLink: typeof sendLoginLink,
+      verifyLoginToken: typeof verifyLoginToken,
+      logout: typeof logout,
+      refreshToken: typeof refreshToken
+    }
+  });
 
   return (
     <AuthContext.Provider value={value}>
