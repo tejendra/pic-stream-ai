@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Camera,
@@ -11,7 +11,6 @@ import {
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -95,12 +94,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="hidden md:flex md:items-center md:space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                >
-                  Login
-                </Link>
+                {/* No login button - users should use the home page login */}
               </div>
             )}
 
@@ -178,13 +172,7 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="border-t border-gray-200 pt-4 space-y-2">
-                <Link
-                  to="/login"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
+                {/* No login button - users should use the home page login */}
               </div>
             )}
           </div>

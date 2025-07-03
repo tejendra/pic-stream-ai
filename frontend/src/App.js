@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -22,8 +22,21 @@ import NotFound from './pages/NotFound';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   
   console.log('ProtectedRoute state:', { user: !!user, loading, userUid: user?.uid });
+  
+  // Add timeout to redirect to home if not authenticated after 5 seconds
+  React.useEffect(() => {
+    if (!loading && !user) {
+      const timer = setTimeout(() => {
+        console.log('Redirecting to home page - user not authenticated after 5 seconds');
+        navigate('/', { replace: true });
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, user, navigate]);
   
   // Wait for both loading to be false AND user to be available
   if (loading || !user) {

@@ -2,17 +2,143 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAlbumMember(albumId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/albumMembers/$(albumId + '_' + request.auth.uid));
+    }
+    
+    function isAlbumAdmin(albumId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/albumMembers/$(albumId + '_' + request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isAlbumCreator(albumId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/albums/$(albumId)).data.createdBy == request.auth.uid;
+    }
+    
+    function isMediaOwner(mediaId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/media/$(mediaId)).data.uploadedBy == request.auth.uid;
+    }
+    
+    function isMediaAlbumAdmin(mediaId) {
+      let media = get(/databases/$(database)/documents/media/$(mediaId));
+      let albumId = media.data.albumId;
+      return isAlbumAdmin(albumId);
+    }
+    
+    function isMediaAlbumMember(mediaId) {
+      let media = get(/databases/$(database)/documents/media/$(mediaId));
+      let albumId = media.data.albumId;
+      return isAlbumMember(albumId);
+    }
+    
+    function isAlbumNotExpired(albumId) {
+      let album = get(/databases/$(database)/documents/albums/$(albumId));
+      return album.data.expirationDate > request.time;
+    }
+    
+    function isValidEmail(email) {
+      return email.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    // Users collection - users can only access their own profile
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // User emails mapping - only for internal use, no direct access
+    match /userEmails/{email} {
+      allow read, write: if false; // Only backend can access
+    }
+    
+    // Login tokens - only backend can access
+    match /loginTokens/{token} {
+      allow read, write: if false; // Only backend can access
+    }
+    
+    // Albums collection
+    match /albums/{albumId} {
+      // Read: album members can read album details
+      allow read: if isAlbumMember(albumId) && isAlbumNotExpired(albumId);
+      
+      // Create: authenticated users can create albums
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.memberCount == 1 &&
+        request.resource.data.mediaCount == 0;
+      
+      // Update: only album admin can update album
+      allow update: if isAlbumAdmin(albumId);
+      
+      // Delete: only album admin can delete album
+      allow delete: if isAlbumAdmin(albumId);
+    }
+    
+    // Album members collection
+    match /albumMembers/{memberId} {
+      // Read: album members can read member list
+      allow read: if isAlbumMember(resource.data.albumId);
+      
+      // Create: only backend can create members (when joining albums)
+      allow create: if false; // Only backend can create
+      
+      // Update: only backend can update members
+      allow update: if false; // Only backend can update
+      
+      // Delete: only backend can delete members
+      allow delete: if false; // Only backend can delete
+    }
+    
+    // Media collection
+    match /media/{mediaId} {
+      // Read: album members can read media
+      allow read: if isMediaAlbumMember(mediaId) && isAlbumNotExpired(resource.data.albumId);
+      
+      // Create: album members can upload media
+      allow create: if isAlbumMember(request.resource.data.albumId) && 
+        request.resource.data.uploadedBy == request.auth.uid &&
+        request.resource.data.uploadedByEmail == request.auth.token.email;
+      
+      // Update: media owner or album admin can update media
+      allow update: if isMediaOwner(mediaId) || isMediaAlbumAdmin(mediaId);
+      
+      // Delete: media owner or album admin can delete media
+      allow delete: if isMediaOwner(mediaId) || isMediaAlbumAdmin(mediaId);
+    }
+    
+    // Shares collection (if you have share functionality)
+    match /shares/{shareId} {
+      // Read: share creator can read share details
+      allow read: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid;
+      
+      // Create: authenticated users can create shares
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Update: share creator can update share
+      allow update: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid;
+      
+      // Delete: share creator can delete share
+      allow delete: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid;
+    }
+    
+    // Deny all other access
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 7, 31);
+      allow read, write: if false;
     }
   }
 }
