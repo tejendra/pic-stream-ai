@@ -130,8 +130,8 @@ npm start
 
 ### 6. Access the Application
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- API Health Check: http://localhost:5000/health
+- Backend API: http://localhost:8080
+- API Health Check: http://localhost:8080/health
 
 ## 📁 Project Structure
 

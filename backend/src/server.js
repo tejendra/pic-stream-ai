@@ -37,7 +37,7 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 app.use(compression());
@@ -46,18 +46,26 @@ app.use(limiter);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+let FRONTEND_BUILD_PATH
+
+if (process.env.NODE_ENV === 'development') {
+  FRONTEND_BUILD_PATH = '../../frontend/build'
+} else if (process.env.NODE_ENV === 'production') {
+  FRONTEND_BUILD_PATH = './public/index.html'
+}
+
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Serve static files from frontend/build
-console.error('serving static files from', __dirname, path.join(__dirname, '../../frontend/build'))
-app.use(express.static(path.join(__dirname, '../../frontend/build')));
+app.use(express.static(path.join(__dirname, FRONTEND_BUILD_PATH)));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV
   });
 });
 
@@ -72,18 +80,18 @@ app.use('/api/albums', authenticateToken, albumRoutes);
 app.use(errorHandler);
 
 // 404 handler
-// app.use('*', (req, res) => {
-//   res.status(404).json({ error: 'Route not found' });
-// });
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 // Fallback to index.html for SPA routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
+  res.sendFile(path.join(__dirname, FRONTEND_BUILD_PATH));
 });
 
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL}`);
   console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 

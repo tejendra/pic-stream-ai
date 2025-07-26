@@ -64,8 +64,6 @@ const PublicRoute = ({ children }) => {
 function AppContent() {
   const location = useLocation();
   
-  console.log('AppContent render:', { pathname: location.pathname });
-  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Only show Navbar if not on Home page */}
