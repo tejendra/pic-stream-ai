@@ -18,6 +18,7 @@ service cloud.firestore {
     
     function isAlbumAdmin(albumId) {
       return isAuthenticated() && 
+        exists(/databases/$(database)/documents/albumMembers/$(albumId + '_' + request.auth.uid)) &&
         get(/databases/$(database)/documents/albumMembers/$(albumId + '_' + request.auth.uid)).data.role == 'admin';
     }
     

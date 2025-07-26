@@ -22,7 +22,7 @@ const { authenticateToken } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 // Trust proxy for rate limiting
 app.set('trust proxy', 1);
@@ -48,6 +48,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve static files from frontend/build
+console.error('serving static files from', __dirname, path.join(__dirname, '../../frontend/build'))
+app.use(express.static(path.join(__dirname, '../../frontend/build')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -69,8 +72,12 @@ app.use('/api/albums', authenticateToken, albumRoutes);
 app.use(errorHandler);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// app.use('*', (req, res) => {
+//   res.status(404).json({ error: 'Route not found' });
+// });
+// Fallback to index.html for SPA routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/build/index.html'));
 });
 
 // Start server

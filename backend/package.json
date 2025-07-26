@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "build": "echo 'No build step required for Node.js'",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "postinstall": "npm rebuild sharp"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
@@ -25,7 +26,7 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "sharp": "^0.33.0",
+    "sharp": "^0.34.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
