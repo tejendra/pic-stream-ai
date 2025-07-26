@@ -2,9 +2,12 @@ const admin = require('firebase-admin');
 const { Storage } = require('@google-cloud/storage');
 
 // Initialize Firebase Admin SDK
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY 
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-  : require('../firebase-service-account.json');
+let serviceAccount
+if (process.env.NODE_ENV === 'development') {
+  serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY 
+    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
+    : require('../firebase-service-account.json');
+}
 
 
 if (process.env.NODE_ENV === 'development') {

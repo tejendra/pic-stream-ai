@@ -32,6 +32,7 @@ firebase-debug.*.log
 /frontend/dist/
 /backend/dist/
 /backend/build/
+/backend/public/
 
 # Logs
 logs

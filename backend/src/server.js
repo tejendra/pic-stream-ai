@@ -51,7 +51,7 @@ let FRONTEND_BUILD_PATH
 if (process.env.NODE_ENV === 'development') {
   FRONTEND_BUILD_PATH = '../../frontend/build'
 } else if (process.env.NODE_ENV === 'production') {
-  FRONTEND_BUILD_PATH = './public/index.html'
+  FRONTEND_BUILD_PATH = './public'
 }
 
 // Static files
@@ -79,10 +79,6 @@ app.use('/api/albums', authenticateToken, albumRoutes);
 // Error handling middleware
 app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
 // Fallback to index.html for SPA routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, FRONTEND_BUILD_PATH));
@@ -92,7 +88,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔧 Environment: ${process.env.NODE_ENV}`);
 });
 
 module.exports = app; 

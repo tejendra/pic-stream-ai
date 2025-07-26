@@ -1,42 +1,8 @@
-runtime: nodejs20
-# entrypoint: node backend/src/server.js
-entrypoint: node -e "console.log('✅ using apphosting.yaml entrypoint')"
-
 # Settings for Backend (on Cloud Run).
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
-# bundles:
-  # - name: frontend
-  #   dir: backend/public
-    # command: |
-    #   cd frontend
-    #   npm ci
-    #   npm run build
-    #   rm -rf ../backend/public
-    #   mkdir -p ../backend/public
-    #   cp -r build/* ../backend/public/
-  #   include: "**/*"
 scripts:
-    buildCommand: |
-      cd frontend
-      npm ci
-      npm run build
-      rm -rf ../backend/public
-      mkdir -p ../backend/public
-      cp -r build/* ../backend/public/
-    runCommand: |
-      cd backend
-      npm start
-
-handlers:
-  # Serve static assets (JS, CSS, images, etc.)
-  - url: /(.*\.(css|js|png|jpg|jpeg|gif|svg|ico|json|txt|woff|woff2|ttf|eot|otf|map))
-    static_files: backend/public/\1
-    upload: backend/public/(.*)
-
-  # SPA fallback to index.html
-  - url: /.*
-    static_files: backend/public/index.html
-    upload: backend/public/index.html
+    buildCommand: bash -c "cd frontend && npm install && npm run build && rm -rf ../backend/public && mkdir -p ../backend/public && cp -r build/* ../backend/public/ && cd ../backend && npm install"
+    runCommand: bash -c "cd backend && npm start"
 
 runConfig:
   minInstances: 0
@@ -59,7 +25,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
+  - variable: REACT_APP_API_URL
+    value: "https://pic-stream-ai-backend--pic-stream-ai.us-central1.hosted.app" #TODO: do i need to specify port?
+    availability:
+      - BUILD
+      - RUNTIME
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
