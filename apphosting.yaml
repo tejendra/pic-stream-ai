@@ -25,8 +25,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "pic-stream-ai.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: REACT_APP_API_URL
-    value: "https://pic-stream-ai-backend--pic-stream-ai.us-central1.hosted.app"
+    value: "https://pic-stream-ai-backend--pic-stream-ai.us-central1.hosted.app/api"
     availability:
       - BUILD
       - RUNTIME

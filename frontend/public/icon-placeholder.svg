@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#3B82F6"/>
+  
+  <!-- Camera icon -->
+  <g transform="translate(128, 128)">
+    <!-- Camera body -->
+    <rect x="64" y="96" width="128" height="96" rx="16" fill="white"/>
+    
+    <!-- Camera lens -->
+    <circle cx="128" cy="144" r="32" fill="#1E40AF"/>
+    <circle cx="128" cy="144" r="24" fill="#3B82F6"/>
+    <circle cx="128" cy="144" r="16" fill="#1E40AF"/>
+    
+    <!-- Camera flash -->
+    <rect x="144" y="80" width="16" height="24" rx="8" fill="white"/>
+    
+    <!-- Photo/video icon -->
+    <rect x="80" y="160" width="96" height="16" rx="8" fill="#1E40AF"/>
+    <circle cx="96" cy="168" r="4" fill="white"/>
+    <circle cx="112" cy="168" r="4" fill="white"/>
+    <circle cx="128" cy="168" r="4" fill="white"/>
+    <circle cx="144" cy="168" r="4" fill="white"/>
+    <circle cx="160" cy="168" r="4" fill="white"/>
+  </g>
+  
+  <!-- AI enhancement sparkles -->
+  <g fill="white" opacity="0.8">
+    <circle cx="80" cy="80" r="4"/>
+    <circle cx="432" cy="80" r="3"/>
+    <circle cx="80" cy="432" r="3"/>
+    <circle cx="432" cy="432" r="4"/>
+    <circle cx="256" cy="64" r="2"/>
+    <circle cx="256" cy="448" r="2"/>
+  </g>
+</svg> 

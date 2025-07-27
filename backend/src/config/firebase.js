@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === 'development') {
 if (process.env.NODE_ENV === 'development') {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'pic-stream-ai.appspot.com',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
     databaseURL: process.env.FIREBASE_DATABASE_URL
   });
 }
@@ -41,7 +41,7 @@ if (process.env.NODE_ENV === 'production') {
   storage = admin.storage();
 }
 
-const bucket = storage.bucket(process.env.FIREBASE_STORAGE_BUCKET || 'pic-stream-ai.appspot.com');
+const bucket = storage.bucket(process.env.FIREBASE_STORAGE_BUCKET);
 
 module.exports = {
   admin,

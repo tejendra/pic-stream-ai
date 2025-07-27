@@ -35,7 +35,20 @@ const limiter = rateLimit({
 });
 
 // Middleware
-app.use(helmet());
+// Set CSP headers
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "connect-src": ["'self'", "https://identitytoolkit.googleapis.com", "*.googleapis.com"],
+        "style-src": ["'self'", "'unsafe-inline'"], // allow inline styles (for goober)
+        "img-src": ["'self'", "data:", "blob:", "*.googleapis.com"]
+      },
+    },
+  })
+);
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true
