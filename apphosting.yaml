@@ -1,7 +1,7 @@
 # Settings for Backend (on Cloud Run).
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 scripts:
-    buildCommand: bash -c "cd frontend && npm install && npm run build && rm -rf ../backend/public && mkdir -p ../backend/public && cp -r build/* ../backend/public/ && cd ../backend && npm install"
+    buildCommand: bash -c "cd frontend && npm install && npm run build && rm -rf ../backend/src/public && mkdir -p ../backend/src/public && cp -r build/* ../backend/src/public/ && cd ../backend && npm install"
     runCommand: bash -c "cd backend && npm start"
 
 runConfig:
@@ -26,10 +26,34 @@ env:
       - BUILD
       - RUNTIME
   - variable: REACT_APP_API_URL
-    value: "https://pic-stream-ai-backend--pic-stream-ai.us-central1.hosted.app" #TODO: do i need to specify port?
+    value: "https://pic-stream-ai-backend--pic-stream-ai.us-central1.hosted.app"
     availability:
       - BUILD
       - RUNTIME
+  - variable: REACT_APP_FIREBASE_API_KEY
+    secret: firebase-api-key
+    availability:
+      - BUILD
+  - variable: REACT_APP_FIREBASE_AUTH_DOMAIN
+    value: "pic-stream-ai.firebaseapp.com"
+    availability:
+      - BUILD
+  - variable: REACT_APP_FIREBASE_PROJECT_ID
+    value: "pic-stream-ai"
+    availability:
+      - BUILD
+  - variable: REACT_APP_FIREBASE_STORAGE_BUCKET
+    value: "pic-stream-ai.firebasestorage.app"
+    availability:
+      - BUILD
+  - variable: REACT_APP_FIREBASE_MESSAGING_SENDER_ID
+    secret: firebase-messaging-sender-id
+    availability:
+      - BUILD
+  - variable: REACT_APP_FIREBASE_APP_ID
+    secret: firebase-app-id
+    availability:
+      - BUILD
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters

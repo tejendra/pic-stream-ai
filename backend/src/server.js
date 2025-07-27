@@ -57,9 +57,6 @@ if (process.env.NODE_ENV === 'development') {
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Serve static files from frontend/build
-app.use(express.static(path.join(__dirname, FRONTEND_BUILD_PATH)));
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
@@ -76,12 +73,34 @@ app.use('/api/media', authenticateToken, mediaRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/albums', authenticateToken, albumRoutes);
 
+// Serve static files from frontend/build (after API routes)
+app.use(express.static(path.join(__dirname, FRONTEND_BUILD_PATH), {
+  setHeaders: (res, path) => {
+    // Set correct MIME types for common file types
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (path.endsWith('.ico')) {
+      res.setHeader('Content-Type', 'image/x-icon');
+    }
+  }
+}));
+
 // Error handling middleware
 app.use(errorHandler);
 
-// Fallback to index.html for SPA routes
+// Fallback to index.html for SPA routes (must be last)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, FRONTEND_BUILD_PATH));
+  res.sendFile(path.join(__dirname, FRONTEND_BUILD_PATH, 'index.html'));
 });
 
 // Start server
