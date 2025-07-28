@@ -5,18 +5,18 @@
   "description": "High-quality photo and video sharing app with AI features",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"yarn workspace pic-stream-ai-frontend start\" \"yarn workspace pic-stream-ai-backend dev\"",
-    "dev:frontend": "yarn workspace pic-stream-ai-frontend start",
-    "dev:backend": "yarn workspace pic-stream-ai-backend dev",
-    "build": "yarn workspace pic-stream-ai-frontend build && yarn workspace pic-stream-ai-backend build",
+    "dev": "concurrently \"yarn workspace frontend dev\" \"yarn workspace backend dev\"",
+    "dev:frontend": "yarn workspace frontend dev",
+    "dev:backend": "yarn workspace backend dev",
+    "build": "./build.sh",
     "start": "yarn start:backend",
-    "start:backend": "yarn workspace pic-stream-ai-backend start",
-    "build:frontend": "yarn workspace pic-stream-ai-frontend build",
-    "build:backend": "yarn workspace pic-stream-ai-backend build",
+    "start:backend": "yarn workspace backend start",
+    "build:frontend": "yarn workspace frontend build",
+    "build:backend": "yarn workspace backend build",
     "install:all": "yarn install",
-    "test": "yarn workspace pic-stream-ai-frontend test && yarn workspace pic-stream-ai-backend test",
-    "test:frontend": "yarn workspace pic-stream-ai-frontend test",
-    "test:backend": "yarn workspace pic-stream-ai-backend test"
+    "test": "yarn workspace frontend test && yarn workspace backend test",
+    "test:frontend": "yarn workspace frontend test",
+    "test:backend": "yarn workspace backend test"
   },
   "workspaces": [
     "frontend",

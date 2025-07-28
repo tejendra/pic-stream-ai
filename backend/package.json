@@ -1,5 +1,5 @@
 {
-  "name": "pic-stream-ai-backend",
+  "name": "backend",
   "version": "1.0.0",
   "description": "Backend API for pic-stream-ai photo sharing application",
   "main": "src/server.js",

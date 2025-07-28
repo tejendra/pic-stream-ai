@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 // Create axios instance with auth token and refresh logic
 const createApiClient = () => {
   const client = axios.create({
-    baseURL: process.env.REACT_APP_API_URL,
+    baseURL: import.meta.env.VITE_API_URL,
     timeout: 30000
   });
 

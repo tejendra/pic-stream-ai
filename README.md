@@ -10,6 +10,7 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 - **Smart Organization**: AI-powered tagging and organization
 - **Global Access**: Access your media from anywhere, on any device
 - **Responsive Design**: Beautiful, modern UI that works on all devices
+- **Lightning Fast Development**: Vite-powered build system for instant hot reload and fast builds
 
 ## 🏗️ Tech Stack
 
@@ -19,6 +20,7 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 
 ### Frontend
 - **React 18** - Modern React with hooks and functional components
+- **Vite** - Fast build tool and development server
 - **Tailwind CSS** - Utility-first CSS framework for rapid UI development
 - **React Router** - Client-side routing
 - **Firebase Auth** - Authentication and user management
