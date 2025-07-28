@@ -43,7 +43,7 @@ app.use(
       directives: {
         "default-src": ["'self'"],
         "connect-src": ["'self'", "https://identitytoolkit.googleapis.com", "*.googleapis.com"],
-        "style-src": ["'self'", "'unsafe-inline'"], // allow inline styles (for goober)
+        "style-src": ["'self'", "'unsafe-inline'", "*.googleapis.com"], // allow inline styles (for goober)
         "img-src": ["'self'", "data:", "blob:", "*.googleapis.com"]
       },
     },

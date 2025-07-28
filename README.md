@@ -13,6 +13,10 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 
 ## 🏗️ Tech Stack
 
+### Package Management
+- **Yarn** - Fast, reliable, and secure package manager with workspace support
+- **Workspaces** - Monorepo setup for managing frontend and backend dependencies
+
 ### Frontend
 - **React 18** - Modern React with hooks and functional components
 - **Tailwind CSS** - Utility-first CSS framework for rapid UI development
@@ -45,7 +49,7 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 
 ### Prerequisites
 - Node.js (v16 or higher)
-- npm or yarn
+- Yarn (recommended) or npm
 - Firebase project
 - Google Cloud project (optional)
 
@@ -57,6 +61,10 @@ cd pic-stream-ai
 
 ### 2. Install Dependencies
 ```bash
+# Install all dependencies (recommended)
+yarn install
+
+# Or install manually:
 # Install root dependencies
 npm install
 
@@ -114,18 +122,16 @@ REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 #### Option 1: Start Both Servers (Recommended)
 ```bash
 # From root directory
-npm run dev
+yarn dev
 ```
 
 #### Option 2: Start Servers Separately
 ```bash
 # Terminal 1 - Backend
-cd backend
-npm run dev
+yarn dev:backend
 
 # Terminal 2 - Frontend
-cd frontend
-npm start
+yarn dev:frontend
 ```
 
 ### 6. Access the Application

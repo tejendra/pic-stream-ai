@@ -4,7 +4,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
-yarn.lock
 
 # Environment files
 .env
@@ -64,7 +63,6 @@ README.md
 
 # Development scripts
 setup.sh
-*.sh
 
 # Temporary files
 tmp/
@@ -80,6 +78,7 @@ cache/
 /backend/resized/
 /backend/collages/
 /backend/temp/
+/backend/src/public/
 
 # Git
 .git/

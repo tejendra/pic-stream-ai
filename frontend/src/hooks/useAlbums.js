@@ -22,7 +22,7 @@ export const useAlbums = () => {
         setError(err.message);
       });
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear error when albums are successfully fetched
   useEffect(() => {
@@ -82,7 +82,7 @@ export const useAlbumDetails = (albumId) => {
           setIsLoading(false);
         });
     }
-  }, [user, albumId]);
+  }, [user, albumId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     album: currentAlbum,

@@ -1,8 +1,8 @@
 # Settings for Backend (on Cloud Run).
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 scripts:
-    buildCommand: bash -c "cd frontend && npm install && npm run build && rm -rf ../backend/src/public && mkdir -p ../backend/src/public && cp -r build/* ../backend/src/public/ && cd ../backend && npm install"
-    runCommand: bash -c "cd backend && npm start"
+    buildCommand: ./build.sh
+    runCommand: ./start.sh
 
 runConfig:
   minInstances: 0

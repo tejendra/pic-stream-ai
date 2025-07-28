@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "🚀 Setting up PicStream AI project..."
+echo "📦 Using Yarn for package management with workspace support"
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -17,21 +18,17 @@ fi
 
 echo "✅ Node.js version: $(node -v)"
 
-# Install root dependencies
-echo "📦 Installing root dependencies..."
-npm install
+# Check if Yarn is installed
+if ! command -v yarn &> /dev/null; then
+    echo "❌ Yarn is not installed. Please install Yarn: npm install -g yarn"
+    exit 1
+fi
 
-# Install frontend dependencies
-echo "📦 Installing frontend dependencies..."
-cd frontend
-npm install
-cd ..
+echo "✅ Yarn version: $(yarn --version)"
 
-# Install backend dependencies
-echo "📦 Installing backend dependencies..."
-cd backend
-npm install
-cd ..
+# Install all dependencies using Yarn workspaces
+echo "📦 Installing all dependencies with Yarn workspaces..."
+yarn install
 
 # Create environment files
 echo "📝 Creating environment files..."
@@ -64,7 +61,7 @@ echo "📋 Next steps:"
 echo "1. Configure Firebase project and get your credentials"
 echo "2. Update backend/.env with your Firebase service account key"
 echo "3. Update frontend/.env with your Firebase config"
-echo "4. Run 'npm run dev' to start both servers"
+echo "4. Run 'yarn dev' to start both servers"
 echo ""
 echo "🌐 Access the application:"
 echo "   Frontend: http://localhost:3000"
