@@ -1,17 +1,18 @@
 import React from 'react';
+import { Box, CircularProgress } from '@mui/material';
 
 const LoadingSpinner = ({ size = 'md', className = '' }) => {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-    xl: 'h-16 w-16'
+  const sizeMap = {
+    sm: 16,
+    md: 32,
+    lg: 48,
+    xl: 64
   };
 
   return (
-    <div className={`flex justify-center items-center ${className}`}>
-      <div className={`spinner ${sizeClasses[size]}`}></div>
-    </div>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <CircularProgress size={sizeMap[size]} />
+    </Box>
   );
 };
 

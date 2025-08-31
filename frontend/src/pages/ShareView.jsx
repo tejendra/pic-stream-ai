@@ -1,3 +1,4 @@
+// AI Generated - Needs Review
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,10 +14,24 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  TextField,
+  Chip,
+  Alert,
+  useTheme
+} from '@mui/material';
 
 const ShareView = () => {
   const { shareId } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState(null);
   const [password, setPassword] = useState('');
@@ -116,256 +131,355 @@ const ShareView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner />
+      </Box>
     );
   }
 
   if (showPasswordForm) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Password Protected
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </Typography>
+            <Typography sx={{ color: 'text.secondary', mb: 4 }}>
               This file is password protected
-            </p>
-          </div>
-          <form className="mt-8 space-y-6" onSubmit={handlePasswordSubmit}>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
+            </Typography>
+            <Box component="form" onSubmit={handlePasswordSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
                 id="password"
                 name="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Enter password"
+                fullWidth
+                error={!!passwordError}
+                helperText={passwordError}
               />
-              {passwordError && (
-                <p className="mt-2 text-sm text-red-600">{passwordError}</p>
-              )}
-            </div>
-            <div>
-              <button
+              <Button
                 type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                variant="contained"
+                fullWidth
+                sx={{ fontWeight: 'medium' }}
               >
                 Access File
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+              </Button>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   if (!media) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">File Not Found</h2>
-          <p className="mt-2 text-gray-600">The file you're looking for doesn't exist or has been removed.</p>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>
+            File Not Found
+          </Typography>
+          <Typography sx={{ color: 'text.secondary' }}>
+            The file you're looking for doesn't exist or has been removed.
+          </Typography>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-6">
-          <button
+        <Box sx={{ mb: 3 }}>
+          <Button
+            startIcon={<ArrowLeft size={16} />}
             onClick={() => navigate('/')}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+            sx={{ 
+              color: 'text.secondary', 
+              mb: 2,
+              '&:hover': { color: 'text.primary' }
+            }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">{media.title}</h1>
-        </div>
+          </Button>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+            {media.title}
+          </Typography>
+        </Box>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Grid container spacing={4}>
           {/* Media Display */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Grid item xs={12} lg={8}>
+            <Card sx={{ overflow: 'hidden', boxShadow: 2 }}>
               {media.mimeType?.startsWith('image/') ? (
-                <img
+                <Box
+                  component="img"
                   src={media.url}
                   alt={media.title}
-                  className="w-full h-auto max-h-96 object-contain"
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 400,
+                    objectFit: 'contain'
+                  }}
                 />
               ) : (
-                <video
+                <Box
+                  component="video"
                   src={media.url}
                   controls
-                  className="w-full h-auto max-h-96"
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 400
+                  }}
                 >
                   Your browser does not support the video tag.
-                </video>
+                </Box>
               )}
-            </div>
-          </div>
+            </Card>
+          </Grid>
 
           {/* Media Info */}
-          <div className="space-y-6">
-            {/* Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
-              <div className="space-y-3">
-                {media.allowDownload && (
-                  <button
-                    onClick={downloadMedia}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </button>
-                )}
-                <button
-                  onClick={shareMedia}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </button>
-                <button
-                  onClick={() => copyToClipboard(window.location.href)}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  {copied ? 'Copied!' : 'Copy Link'}
-                </button>
-              </div>
-            </div>
-
-            {/* File Information */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">File Information</h3>
-              <dl className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <User className="h-4 w-4 mr-2" />
-                    Shared by
-                  </dt>
-                  <dd className="text-sm text-gray-900">{media.uploadedBy?.displayName || 'Unknown'}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Uploaded
-                  </dt>
-                  <dd className="text-sm text-gray-900">{formatDate(media.uploadedAt)}</dd>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500">File size</dt>
-                  <dd className="text-sm text-gray-900">{formatFileSize(media.size)}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500">File type</dt>
-                  <dd className="text-sm text-gray-900">{media.mimeType}</dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    {media.isPublic ? (
-                      <Globe className="h-4 w-4 mr-2 text-green-500" />
-                    ) : (
-                      <Lock className="h-4 w-4 mr-2 text-red-500" />
+          <Grid item xs={12} lg={4}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Actions */}
+              <Card sx={{ boxShadow: 2 }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 2 }}>
+                    Actions
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {media.allowDownload && (
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<Download size={16} />}
+                        onClick={downloadMedia}
+                        sx={{ fontWeight: 'medium' }}
+                      >
+                        Download
+                      </Button>
                     )}
-                    Visibility
-                  </dt>
-                  <dd className="text-sm text-gray-900">
-                    {media.isPublic ? 'Public' : 'Private'}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Description */}
-            {media.description && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Description</h3>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{media.description}</p>
-              </div>
-            )}
-
-            {/* Tags */}
-            {media.tags && media.tags.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <Tag className="h-5 w-5 mr-2" />
-                  Tags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {media.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<Share2 size={16} />}
+                      onClick={shareMedia}
+                      sx={{ fontWeight: 'medium' }}
                     >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Share Information */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Share</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Direct Link
-                  </label>
-                  <div className="flex">
-                    <input
-                      type="text"
-                      value={window.location.href}
-                      readOnly
-                      className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <button
+                      Share
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<Copy size={16} />}
                       onClick={() => copyToClipboard(window.location.href)}
-                      className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      sx={{ fontWeight: 'medium' }}
                     >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Embed Code
-                  </label>
-                  <div className="flex">
-                    <input
-                      type="text"
-                      value={`<img src="${media.url}" alt="${media.title}" />`}
-                      readOnly
-                      className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(`<img src="${media.url}" alt="${media.title}" />`)}
-                      className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                      {copied ? 'Copied!' : 'Copy Link'}
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+
+              {/* File Information */}
+              <Card sx={{ boxShadow: 2 }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 2 }}>
+                    File Information
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <User size={16} style={{ color: theme.palette.text.secondary }} />
+                        <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary' }}>
+                          Shared by
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        {media.uploadedBy?.displayName || 'Unknown'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Calendar size={16} style={{ color: theme.palette.text.secondary }} />
+                        <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary' }}>
+                          Uploaded
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        {formatDate(media.uploadedAt)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary' }}>
+                        File size
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        {formatFileSize(media.size)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary' }}>
+                        File type
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        {media.mimeType}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {media.isPublic ? (
+                          <Globe size={16} style={{ color: theme.palette.success.main }} />
+                        ) : (
+                          <Lock size={16} style={{ color: theme.palette.error.main }} />
+                        )}
+                        <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary' }}>
+                          Visibility
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        {media.isPublic ? 'Public' : 'Private'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+
+              {/* Description */}
+              {media.description && (
+                <Card sx={{ boxShadow: 2 }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 2 }}>
+                      Description
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                      {media.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Tags */}
+              {media.tags && media.tags.length > 0 && (
+                <Card sx={{ boxShadow: 2 }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Tag size={20} style={{ color: theme.palette.text.secondary, marginRight: 8 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                        Tags
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {media.tags.map((tag, index) => (
+                        <Chip
+                          key={index}
+                          label={tag}
+                          size="small"
+                          sx={{
+                            bgcolor: theme.palette.primary[100],
+                            color: theme.palette.primary[800],
+                            fontWeight: 'medium'
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Share Information */}
+              <Card sx={{ boxShadow: 2 }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 2 }}>
+                    Share
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary', mb: 1 }}>
+                        Direct Link
+                      </Typography>
+                      <Box sx={{ display: 'flex' }}>
+                        <TextField
+                          type="text"
+                          value={window.location.href}
+                          InputProps={{ readOnly: true }}
+                          sx={{ 
+                            flex: 1,
+                            '& .MuiOutlinedInput-root': { 
+                              borderTopRightRadius: 0, 
+                              borderBottomRightRadius: 0 
+                            } 
+                          }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() => copyToClipboard(window.location.href)}
+                          sx={{ 
+                            borderTopLeftRadius: 0, 
+                            borderBottomLeftRadius: 0,
+                            borderLeft: 'none'
+                          }}
+                        >
+                          <Copy size={16} />
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.secondary', mb: 1 }}>
+                        Embed Code
+                      </Typography>
+                      <Box sx={{ display: 'flex' }}>
+                        <TextField
+                          type="text"
+                          value={`<img src="${media.url}" alt="${media.title}" />`}
+                          InputProps={{ readOnly: true }}
+                          sx={{ 
+                            flex: 1,
+                            '& .MuiOutlinedInput-root': { 
+                              borderTopRightRadius: 0, 
+                              borderBottomRightRadius: 0 
+                            } 
+                          }}
+                        />
+                        <Button
+                          variant="outlined"
+                          onClick={() => copyToClipboard(`<img src="${media.url}" alt="${media.title}" />`)}
+                          sx={{ 
+                            borderTopLeftRadius: 0, 
+                            borderBottomLeftRadius: 0,
+                            borderLeft: 'none'
+                          }}
+                        >
+                          <Copy size={16} />
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

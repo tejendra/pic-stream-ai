@@ -1,3 +1,4 @@
+// AI Generated - Needs Review
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,12 +16,34 @@ import {
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import InlineUpload from '../components/InlineUpload';
 import GroupedMediaGrid from '../components/GroupedMediaGrid';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+  Avatar,
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
+  useTheme
+} from '@mui/material';
 
 const Album = () => {
   console.log('Album component rendered');
   const { albumId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const theme = useTheme();
   
   console.log('Album component state:', {
     albumId,
@@ -234,9 +257,9 @@ const Album = () => {
 
   if (albumLoading || loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner />
+      </Box>
     );
   }
 
@@ -250,19 +273,24 @@ const Album = () => {
     });
     
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Album Not Found</h2>
-          <p className="text-gray-600 mb-4">{albumError || error || 'The requested album could not be found.'}</p>
-          <button
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h5" sx={{ color: 'error.main', mb: 1, fontWeight: 'semibold' }}>
+            Album Not Found
+          </Typography>
+          <Typography sx={{ color: 'text.secondary', mb: 2 }}>
+            {albumError || error || 'The requested album could not be found.'}
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<ArrowLeft size={20} />}
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            sx={{ fontWeight: 'medium' }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Box>
+      </Box>
     );
   }
 
@@ -270,107 +298,114 @@ const Album = () => {
   const isExpired = daysUntilExpiry <= 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-6">
-          <button
+        <Box sx={{ mb: 3 }}>
+          <Button
+            startIcon={<ArrowLeft size={20} />}
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+            sx={{ mb: 2, color: 'text.secondary' }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
-          </button>
+          </Button>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{album.title}</h1>
-              <div className="mt-2 flex items-center space-x-6 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1" />
-                  {album.memberCount} members
-                </div>
-                <div className="flex items-center">
-                  <ImageIcon className="h-4 w-4 mr-1" />
-                  {album.mediaCount} photos/videos
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Created {formatDate(album.createdAt)}
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                {album.title}
+              </Typography>
+              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Users size={16} style={{ color: theme.palette.text.secondary }} />
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {album.memberCount} members
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <ImageIcon size={16} style={{ color: theme.palette.text.secondary }} />
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {album.mediaCount} photos/videos
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Calendar size={16} style={{ color: theme.palette.text.secondary }} />
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Created {formatDate(album.createdAt)}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Clock size={16} style={{ color: theme.palette.text.secondary }} />
                   {isExpired ? (
-                    <span className="text-red-600">Expired</span>
+                    <Typography variant="body2" sx={{ color: 'error.main' }}>
+                      Expired
+                    </Typography>
                   ) : (
-                    <span className={daysUntilExpiry <= 7 ? 'text-orange-600' : 'text-gray-600'}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: daysUntilExpiry <= 7 ? 'warning.main' : 'text.secondary' 
+                      }}
+                    >
                       Expires in {daysUntilExpiry} days
-                    </span>
+                    </Typography>
                   )}
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
             
-            <div className="flex space-x-3">
-              <button
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<Share2 size={20} />}
                 onClick={handleShareAlbum}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                sx={{ fontWeight: 'medium' }}
               >
-                <Share2 className="h-4 w-4 mr-2" />
                 Share Album
-              </button>
+              </Button>
               <InlineUpload albumId={album.id} onUploadComplete={handleUploadComplete} />
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
 
         {/* View Mode Toggle */}
         {media.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">View:</span>
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grouped')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'grouped'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                View:
+              </Typography>
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(e, newValue) => newValue && setViewMode(newValue)}
+                size="small"
+              >
+                <ToggleButton value="grouped">
                   Grouped by User
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'grid'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
+                </ToggleButton>
+                <ToggleButton value="grid">
                   Grid View
-                </button>
-              </div>
-            </div>
-          </div>
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          </Box>
         )}
 
         {/* Media Grid */}
         {media.length === 0 ? (
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-12 sm:px-6 lg:px-8">
-              <div className="text-center">
-                <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No photos yet</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Get started by adding photos to this album.
-                </p>
-                <div className="mt-6">
-                  <InlineUpload albumId={album.id} onUploadComplete={handleUploadComplete} />
-                </div>
-              </div>
-            </div>
-          </div>
+          <Card sx={{ boxShadow: 2 }}>
+            <CardContent sx={{ py: 6, textAlign: 'center' }}>
+              <ImageIcon size={48} style={{ color: theme.palette.text.secondary, margin: '0 auto 16px' }} />
+              <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
+                No photos yet
+              </Typography>
+              <Typography sx={{ color: 'text.secondary', mb: 3 }}>
+                Get started by adding photos to this album.
+              </Typography>
+              <InlineUpload albumId={album.id} onUploadComplete={handleUploadComplete} />
+            </CardContent>
+          </Card>
         ) : viewMode === 'grouped' ? (
           <GroupedMediaGrid 
             media={media} 
@@ -380,171 +415,189 @@ const Album = () => {
             onDownloadSingleMedia={handleDownloadSingleMedia}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <Grid container spacing={2}>
             {media.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow">
-                <Link to={`/media/${item.id}`}>
-                  <div className="aspect-square overflow-hidden">
-                    {item.mimeType?.startsWith('image/') ? (
-                      <img
-                        src={item.thumbnailUrl || item.publicUrl}
-                        alt={item.originalName}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                      />
-                    ) : (
-                      <div className="relative w-full h-full bg-gray-100">
-                        <img
+              <Grid item xs={12} sm={6} md={4} lg={3} xl={2.4} key={item.id}>
+                <Card sx={{ 
+                  height: '100%',
+                  '&:hover': { boxShadow: 4 },
+                  transition: 'box-shadow 0.2s ease-in-out'
+                }}>
+                  <Link to={`/media/${item.id}`} style={{ textDecoration: 'none' }}>
+                    <Box sx={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden' }}>
+                      {item.mimeType?.startsWith('image/') ? (
+                        <Box
+                          component="img"
                           src={item.thumbnailUrl || item.publicUrl}
                           alt={item.originalName}
-                          className="w-full h-full object-cover"
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            '&:hover': {
+                              transform: 'scale(1.05)',
+                              transition: 'transform 0.2s ease-in-out'
+                            }
+                          }}
                         />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="bg-black bg-opacity-50 rounded-full p-2">
-                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </Link>
-                
-                <div className="p-3">
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={() => handleDownloadSingleMedia(item)}
-                      className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                      title="Download"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    {item.uploadedBy === user.uid && (
-                      <button
-                        onClick={() => handleDeleteMedia(item.id, item.originalName)}
-                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Delete media"
+                      ) : (
+                        <Box sx={{ position: 'relative', width: '100%', height: '100%', bgcolor: theme.palette.grey[100] }}>
+                          <Box
+                            component="img"
+                            src={item.thumbnailUrl || item.publicUrl}
+                            alt={item.originalName}
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Avatar sx={{ bgcolor: 'rgba(0,0,0,0.5)' }}>
+                              <Typography variant="h6" sx={{ color: 'white' }}>▶</Typography>
+                            </Avatar>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  </Link>
+                  
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDownloadSingleMedia(item)}
+                        title="Download"
+                        sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+                        <Typography variant="h6">↓</Typography>
+                      </IconButton>
+                      {item.uploadedBy === user.uid && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteMedia(item.id, item.originalName)}
+                          title="Delete media"
+                          sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                        >
+                          <Trash2 size={16} />
+                        </IconButton>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </div>
+          </Grid>
         )}
-      </div>
+      </Container>
 
       {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Share Album</h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Share Link
-                </label>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={shareUrl}
-                    readOnly
-                    className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(shareUrl)}
-                    className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                {copied && (
-                  <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
-                )}
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showShareModal} onClose={() => setShowShareModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Share Album
+            </Typography>
+            <IconButton onClick={() => setShowShareModal(false)}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1, color: 'text.primary' }}>
+              Share Link
+            </Typography>
+            <Box sx={{ display: 'flex' }}>
+              <TextField
+                value={shareUrl}
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ '& .MuiOutlinedInput-root': { borderTopRightRadius: 0, borderBottomRightRadius: 0 } }}
+              />
+              <Button
+                onClick={() => copyToClipboard(shareUrl)}
+                variant="outlined"
+                sx={{ 
+                  borderTopLeftRadius: 0, 
+                  borderBottomLeftRadius: 0,
+                  borderLeft: 'none'
+                }}
+              >
+                <Copy size={16} />
+              </Button>
+            </Box>
+            {copied && (
+              <Alert severity="success" sx={{ mt: 1 }}>
+                Link copied to clipboard!
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowShareModal(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Media Modal */}
-      {showDeleteModal && mediaToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Delete Media</h3>
-                <button
-                  onClick={cancelDeleteMedia}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="mb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
-                  Delete "{mediaToDelete.name}"?
-                </h3>
-                <p className="text-sm text-gray-500 text-center">
-                  This action cannot be undone. The file will be permanently deleted from the album.
-                </p>
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={cancelDeleteMedia}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteMedia}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Dialog open={showDeleteModal} onClose={cancelDeleteMedia} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Delete Media
+            </Typography>
+            <IconButton onClick={cancelDeleteMedia}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.error[100],
+                color: 'error.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <Typography variant="h6">!</Typography>
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1 }}>
+              Delete "{mediaToDelete?.name}"?
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              This action cannot be undone. The file will be permanently deleted from the album.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteMedia} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteMedia}
+            variant="contained"
+            color="error"
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

@@ -1,3 +1,4 @@
+// AI Generated - Needs Review
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAlbums } from '../hooks';
@@ -13,6 +14,29 @@ import {
 } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import createApiClient from '../utils/apiClient';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Alert,
+  Avatar,
+  Chip,
+  useTheme
+} from '@mui/material';
 
 const Dashboard = () => {
   const { albums, loading, error, createAlbum, deleteAlbum } = useAlbums();
@@ -26,8 +50,7 @@ const Dashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-
+  const theme = useTheme();
 
   const formatDate = (date) => {
     if (!date) {
@@ -165,327 +188,322 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Albums</h2>
-          <p className="text-gray-600">{error}</p>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h5" sx={{ color: 'error.main', mb: 1, fontWeight: 'semibold' }}>
+            Error Loading Albums
+          </Typography>
+          <Typography sx={{ color: 'text.secondary' }}>{error}</Typography>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
             Welcome to PicStream!
-          </h1>
-          <p className="mt-2 text-gray-600">
+          </Typography>
+          <Typography sx={{ mt: 1, color: 'text.secondary' }}>
             Create and manage your temporary photo sharing albums
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
         {/* Quick Actions */}
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={handleCreateAlbum}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Album
-            </button>
-          </div>
-        </div>
-
-
+        <Box sx={{ mb: 4 }}>
+          <Button
+            variant="contained"
+            startIcon={<Plus size={20} />}
+            onClick={handleCreateAlbum}
+            sx={{ fontWeight: 'medium' }}
+          >
+            Create New Album
+          </Button>
+        </Box>
 
         {/* Albums List */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+        <Card sx={{ boxShadow: 2 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 2 }}>
               Your Albums
-            </h3>
+            </Typography>
             
             {albums.length === 0 ? (
-              <div className="text-center py-12">
-                <Image className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No albums yet</h3>
-                <p className="mt-1 text-sm text-gray-500">
+              <Box sx={{ textAlign: 'center', py: 6 }}>
+                <Image size={48} style={{ color: theme.palette.text.secondary, margin: '0 auto 16px' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
+                  No albums yet
+                </Typography>
+                <Typography sx={{ color: 'text.secondary', mb: 3 }}>
                   Get started by creating your first album to share photos with friends and family.
-                </p>
-                <div className="mt-6">
-                  <button
-                    onClick={handleCreateAlbum}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Album
-                  </button>
-                </div>
-              </div>
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Plus size={20} />}
+                  onClick={handleCreateAlbum}
+                  sx={{ fontWeight: 'medium' }}
+                >
+                  Create Album
+                </Button>
+              </Box>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Grid container spacing={3}>
                 {albums.map((album) => {
                   const daysUntilExpiry = getDaysUntilExpiry(album.expirationDate);
                   const isExpired = daysUntilExpiry <= 0;
                   
                   return (
-                    <div key={album.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-3">
-                        <h4 className="text-lg font-medium text-gray-900 truncate">
-                          {album.title}
-                        </h4>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleShareAlbum(album.id)}
-                            className="text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Share album"
+                    <Grid item xs={12} md={6} lg={4} key={album.id}>
+                      <Card sx={{ 
+                        height: '100%',
+                        '&:hover': { boxShadow: 4 },
+                        transition: 'box-shadow 0.2s ease-in-out'
+                      }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                              {album.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleShareAlbum(album.id)}
+                                title="Share album"
+                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                              >
+                                <Share2 size={16} />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteAlbum(album.id, album.title)}
+                                title="Delete album"
+                                sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                              >
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Users size={16} style={{ color: theme.palette.text.secondary }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {album.memberCount} members
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Image size={16} style={{ color: theme.palette.text.secondary }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {album.mediaCount} photos/videos
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Calendar size={16} style={{ color: theme.palette.text.secondary }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                Created {formatDate(album.createdAt)}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Clock size={16} style={{ color: theme.palette.text.secondary }} />
+                              {isExpired ? (
+                                <Typography variant="body2" sx={{ color: 'error.main' }}>
+                                  Expired
+                                </Typography>
+                              ) : (
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: daysUntilExpiry <= 7 ? 'warning.main' : 'text.secondary' 
+                                  }}
+                                >
+                                  Expires in {daysUntilExpiry} days
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                          
+                          <Button
+                            component={Link}
+                            to={`/album/${album.id}`}
+                            variant="contained"
+                            fullWidth
+                            sx={{ fontWeight: 'medium' }}
                           >
-                            <Share2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAlbum(album.id, album.title)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                            title="Delete album"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2" />
-                          {album.memberCount} members
-                        </div>
-                        <div className="flex items-center">
-                          <Image className="h-4 w-4 mr-2" />
-                          {album.mediaCount} photos/videos
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Created {formatDate(album.createdAt)}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {isExpired ? (
-                            <span className="text-red-600">Expired</span>
-                          ) : (
-                            <span className={daysUntilExpiry <= 7 ? 'text-orange-600' : 'text-gray-600'}>
-                              Expires in {daysUntilExpiry} days
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <Link
-                          to={`/album/${album.id}`}
-                          className="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          View Album
-                        </Link>
-                      </div>
-                    </div>
+                            View Album
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </Grid>
                   );
                 })}
-              </div>
+              </Grid>
             )}
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </Container>
 
       {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Share Album</h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Share Link
-                </label>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={shareUrl}
-                    readOnly
-                    className="flex-1 block w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(shareUrl)}
-                    className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-                {copied && (
-                  <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
-                )}
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showShareModal} onClose={() => setShowShareModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Share Album
+            </Typography>
+            <IconButton onClick={() => setShowShareModal(false)}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1, color: 'text.primary' }}>
+              Share Link
+            </Typography>
+            <Box sx={{ display: 'flex' }}>
+              <TextField
+                value={shareUrl}
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ '& .MuiOutlinedInput-root': { borderTopRightRadius: 0, borderBottomRightRadius: 0 } }}
+              />
+              <Button
+                onClick={() => copyToClipboard(shareUrl)}
+                variant="outlined"
+                sx={{ 
+                  borderTopLeftRadius: 0, 
+                  borderBottomLeftRadius: 0,
+                  borderLeft: 'none'
+                }}
+              >
+                <Copy size={16} />
+              </Button>
+            </Box>
+            {copied && (
+              <Alert severity="success" sx={{ mt: 1 }}>
+                Link copied to clipboard!
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowShareModal(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Create Album Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Create New Album</h3>
-                <button
-                  onClick={closeCreateModal}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <form onSubmit={handleCreateAlbumSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="albumTitle" className="block text-sm font-medium text-gray-700 mb-2">
-                    Album Title
-                  </label>
-                  <input
-                    type="text"
-                    id="albumTitle"
-                    value={albumTitle}
-                    onChange={(e) => setAlbumTitle(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter album title"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="expirationDays" className="block text-sm font-medium text-gray-700 mb-2">
-                    Expiration Days
-                  </label>
-                  <select
-                    id="expirationDays"
-                    value={expirationDays}
-                    onChange={(e) => setExpirationDays(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    required
-                  >
-                    <option value="14">14 days</option>
-                    <option value="30">30 days</option>
-                    <option value="60">60 days</option>
-                  </select>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={closeCreateModal}
-                    className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    disabled={isCreating}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isCreating || !albumTitle.trim()}
-                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isCreating ? 'Creating...' : 'Create Album'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showCreateModal} onClose={closeCreateModal} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Create New Album
+            </Typography>
+            <IconButton onClick={closeCreateModal}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleCreateAlbumSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              label="Album Title"
+              value={albumTitle}
+              onChange={(e) => setAlbumTitle(e.target.value)}
+              placeholder="Enter album title"
+              required
+              fullWidth
+            />
+            
+            <FormControl fullWidth>
+              <InputLabel>Expiration Days</InputLabel>
+              <Select
+                value={expirationDays}
+                onChange={(e) => setExpirationDays(e.target.value)}
+                label="Expiration Days"
+                required
+              >
+                <MenuItem value="14">14 days</MenuItem>
+                <MenuItem value="30">30 days</MenuItem>
+                <MenuItem value="60">60 days</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCreateModal} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleCreateAlbumSubmit}
+            variant="contained"
+            disabled={isCreating || !albumTitle.trim()}
+          >
+            {isCreating ? 'Creating...' : 'Create Album'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Album Modal */}
-      {showDeleteModal && albumToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Delete Album</h3>
-                <button
-                  onClick={cancelDeleteAlbum}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="mb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
-                  Delete "{albumToDelete.title}"?
-                </h3>
-                <p className="text-sm text-gray-500 text-center">
-                  This action cannot be undone. The album and all its media will be permanently deleted.
-                </p>
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={cancelDeleteAlbum}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteAlbum}
-                  disabled={isDeleting}
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Dialog open={showDeleteModal} onClose={cancelDeleteAlbum} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Delete Album
+            </Typography>
+            <IconButton onClick={cancelDeleteAlbum}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.error[100],
+                color: 'error.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <Typography variant="h6">!</Typography>
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1 }}>
+              Delete "{albumToDelete?.title}"?
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              This action cannot be undone. The album and all its media will be permanently deleted.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteAlbum} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteAlbum}
+            variant="contained"
+            color="error"
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

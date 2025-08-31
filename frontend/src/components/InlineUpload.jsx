@@ -1,3 +1,4 @@
+// AI Generated - Needs Review
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -11,9 +12,24 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Box,
+  Typography,
+  Paper,
+  LinearProgress,
+  Avatar,
+  useTheme
+} from '@mui/material';
 
 const InlineUpload = ({ albumId, onUploadComplete }) => {
   const { user } = useAuth();
+  const theme = useTheme();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -59,9 +75,9 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
   };
 
   const getFileIcon = (type) => {
-    if (type.startsWith('image/')) return <Image className="h-5 w-5 text-blue-500" />;
-    if (type.startsWith('video/')) return <Video className="h-5 w-5 text-red-500" />;
-    return <File className="h-5 w-5 text-gray-500" />;
+    if (type.startsWith('image/')) return <Image size={20} style={{ color: theme.palette.primary.main }} />;
+    if (type.startsWith('video/')) return <Video size={20} style={{ color: theme.palette.error.main }} />;
+    return <File size={20} style={{ color: theme.palette.text.secondary }} />;
   };
 
   const handleSubmit = async (e) => {
@@ -145,24 +161,34 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
     switch (progress.status) {
       case 'uploading':
         return (
-          <div className="flex items-center text-blue-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            Uploading...
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                border: `2px solid ${theme.palette.primary.main}`,
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                mr: 1
+              }}
+            />
+            <Typography variant="body2">Uploading...</Typography>
+          </Box>
         );
       case 'completed':
         return (
-          <div className="flex items-center text-green-600">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Uploaded
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'success.main' }}>
+            <CheckCircle size={16} style={{ marginRight: 4 }} />
+            <Typography variant="body2">Uploaded</Typography>
+          </Box>
         );
       case 'error':
         return (
-          <div className="flex items-center text-red-600">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            Failed
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'error.main' }}>
+            <AlertCircle size={16} style={{ marginRight: 4 }} />
+            <Typography variant="body2">Failed</Typography>
+          </Box>
         );
       default:
         return null;
@@ -177,126 +203,143 @@ const InlineUpload = ({ albumId, onUploadComplete }) => {
 
   return (
     <>
-      <button
+      <Button
+        variant="contained"
+        startIcon={<Plus size={20} />}
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        sx={{ fontWeight: 'medium' }}
       >
-        <Plus className="h-4 w-4 mr-2" />
         Add Photos
-      </button>
+      </Button>
 
-      {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Add Photos to Album</h3>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      <Dialog 
+        open={isOpen} 
+        onClose={closeModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Add Photos to Album
+            </Typography>
+            <IconButton onClick={closeModal}>
+              <X size={20} />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-            <div className="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* File Upload Area */}
-                <div>
-                  <div
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer"
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-600">
-                        Drag and drop files here, or{' '}
-                        <span className="text-blue-600 hover:text-blue-500 font-medium">
-                          click to browse
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max: 250MB per file)
-                      </p>
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* File Upload Area */}
+            <Paper
+              sx={{
+                border: `2px dashed ${theme.palette.divider}`,
+                borderRadius: 2,
+                p: 3,
+                textAlign: 'center',
+                cursor: 'pointer',
+                '&:hover': {
+                  borderColor: theme.palette.text.secondary
+                },
+                transition: 'border-color 0.2s ease-in-out'
+              }}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <UploadIcon size={48} style={{ color: theme.palette.text.secondary, margin: '0 auto 16px' }} />
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                Drag and drop files here, or{' '}
+                <Box component="span" sx={{ color: 'primary.main', fontWeight: 'medium' }}>
+                  click to browse
+                </Box>
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max: 250MB per file)
+              </Typography>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+            </Paper>
 
-                {/* Selected Files */}
-                {files.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Files ({files.length})</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {files.map((fileData) => (
-                        <div key={fileData.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <div className="flex items-center flex-1 min-w-0">
-                            {fileData.preview ? (
-                              <img
-                                src={fileData.preview}
-                                alt={fileData.name}
-                                className="h-8 w-8 object-cover rounded mr-2"
-                              />
-                            ) : (
-                              <div className="h-8 w-8 bg-gray-200 rounded mr-2 flex items-center justify-center">
-                                {getFileIcon(fileData.type)}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{fileData.name}</p>
-                              <p className="text-xs text-gray-500">{formatFileSize(fileData.size)}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {getProgressStatus(fileData.id)}
-                            <button
-                              type="button"
-                              onClick={() => removeFile(fileData.id)}
-                              className="text-gray-400 hover:text-red-500"
-                              disabled={uploading}
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Selected Files */}
+            {files.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                  Selected Files ({files.length})
+                </Typography>
+                <Box sx={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {files.map((fileData) => (
+                    <Paper key={fileData.id} sx={{ p: 1, bgcolor: 'grey.50' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                          {fileData.preview ? (
+                            <Avatar
+                              src={fileData.preview}
+                              alt={fileData.name}
+                              sx={{ width: 32, height: 32, mr: 1 }}
+                            />
+                          ) : (
+                            <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: theme.palette.grey[200] }}>
+                              {getFileIcon(fileData.type)}
+                            </Avatar>
+                          )}
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {fileData.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {formatFileSize(fileData.size)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {getProgressStatus(fileData.id)}
+                          <IconButton
+                            size="small"
+                            onClick={() => removeFile(fileData.id)}
+                            disabled={uploading}
+                            sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                          >
+                            <X size={16} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
+            )}
 
-                {/* Upload Button */}
-                {files.length > 0 && (
-                  <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className="w-full sm:w-auto px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      disabled={uploading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={uploading || files.length === 0}
-                      className="w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
-                    </button>
-                  </div>
-                )}
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* Upload Button */}
+            {files.length > 0 && (
+              <DialogActions sx={{ px: 0 }}>
+                <Button
+                  onClick={closeModal}
+                  disabled={uploading}
+                  sx={{ flex: { xs: 1, sm: 'none' } }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={uploading || files.length === 0}
+                  sx={{ flex: { xs: 1, sm: 'none' } }}
+                >
+                  {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
+                </Button>
+              </DialogActions>
+            )}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

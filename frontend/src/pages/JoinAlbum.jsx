@@ -1,8 +1,17 @@
+// AI Generated - Needs Review
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlbum } from '../contexts/AlbumContext';
 import { CheckCircle, XCircle, Loader, Users, Calendar } from 'lucide-react';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Avatar,
+  useTheme
+} from '@mui/material';
 
 const JoinAlbum = () => {
   const { shareToken } = useParams();
@@ -12,6 +21,7 @@ const JoinAlbum = () => {
   const [status, setStatus] = useState('loading'); // loading, success, error, expired
   const [album, setAlbum] = useState(null);
   const [error, setError] = useState('');
+  const theme = useTheme();
 
   useEffect(() => {
     console.log('JoinAlbum useEffect - user:', user, 'loading:', loading, 'shareToken:', shareToken);
@@ -62,123 +72,197 @@ const JoinAlbum = () => {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-              <Loader className="h-6 w-6 text-blue-600 animate-spin" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.primary[100],
+                color: 'primary.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Joining album
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </Typography>
+            <Typography sx={{ color: 'text.secondary' }}>
               Please wait while we add you to the album...
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.success[100],
+                color: 'success.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <CheckCircle size={24} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Welcome to the album!
-            </h2>
+            </Typography>
             {album && (
-              <div className="mt-4 text-center">
-                <h3 className="text-lg font-medium text-gray-900">{album.title}</h3>
-                <div className="mt-2 flex items-center justify-center space-x-4 text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-1" />
-                    {album.memberCount} members
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Expires {album.expirationDate ? (() => {
-                      let expiryDate;
-                      if (typeof album.expirationDate.toDate === 'function') {
-                        expiryDate = album.expirationDate.toDate();
-                      } else if (album.expirationDate._seconds) {
-                        expiryDate = new Date(album.expirationDate._seconds * 1000);
-                      } else if (album.expirationDate instanceof Date) {
-                        expiryDate = album.expirationDate;
-                      } else {
-                        return 'Invalid Date';
-                      }
-                      return expiryDate.toLocaleDateString();
-                    })() : 'Invalid Date'}
-                  </div>
-                </div>
-              </div>
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Typography variant="h5" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
+                  {album.title}
+                </Typography>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Users size={16} style={{ color: theme.palette.text.secondary, marginRight: 4 }} />
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {album.memberCount} members
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Calendar size={16} style={{ color: theme.palette.text.secondary, marginRight: 4 }} />
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Expires {album.expirationDate ? (() => {
+                        let expiryDate;
+                        if (typeof album.expirationDate.toDate === 'function') {
+                          expiryDate = album.expirationDate.toDate();
+                        } else if (album.expirationDate._seconds) {
+                          expiryDate = new Date(album.expirationDate._seconds * 1000);
+                        } else if (album.expirationDate instanceof Date) {
+                          expiryDate = album.expirationDate;
+                        } else {
+                          return 'Invalid Date';
+                        }
+                        return expiryDate.toLocaleDateString();
+                      })() : 'Invalid Date'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
             )}
-            <p className="mt-4 text-center text-sm text-gray-600">
+            <Typography sx={{ mt: 2, color: 'text.secondary' }}>
               Redirecting you to the album...
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   if (status === 'expired') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-              <XCircle className="h-6 w-6 text-red-600" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.error[100],
+                color: 'error.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <XCircle size={24} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Album Expired
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </Typography>
+            <Typography sx={{ color: 'text.secondary', mb: 3 }}>
               {error}
-            </p>
-            <div className="mt-6">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+            </Typography>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => navigate('/dashboard')}
+              sx={{ fontWeight: 'medium' }}
+            >
+              Go to Dashboard
+            </Button>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-            <XCircle className="h-6 w-6 text-red-600" />
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      bgcolor: 'background.default',
+      py: 6,
+      px: { xs: 2, sm: 3, lg: 4 }
+    }}>
+      <Container maxWidth="sm">
+        <Box sx={{ textAlign: 'center' }}>
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: theme.palette.error[100],
+              color: 'error.main',
+              mx: 'auto',
+              mb: 2
+            }}
+          >
+            <XCircle size={24} />
+          </Avatar>
+          <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
             Join Failed
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          </Typography>
+          <Typography sx={{ color: 'text.secondary', mb: 3 }}>
             {error}
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          </Typography>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => navigate('/dashboard')}
+            sx={{ fontWeight: 'medium' }}
+          >
+            Go to Dashboard
+          </Button>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

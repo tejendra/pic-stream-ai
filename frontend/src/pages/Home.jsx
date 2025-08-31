@@ -1,19 +1,59 @@
+// AI Generated - Needs Review
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Camera, ArrowRight, Mail, Send, X } from 'lucide-react';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  TextField,
+  Card,
+  CardContent,
+  IconButton,
+  Avatar,
+  useTheme,
+  keyframes
+} from '@mui/material';
+import ThemeToggle from '../theme/ThemeToggle';
 
 const funShapes = [
-  { style: 'absolute top-10 left-10 bg-yellow-300', size: 'w-10 h-10', shape: 'rounded-full', opacity: 'opacity-60', rotate: 'rotate-12' },
-  { style: 'absolute bottom-16 right-16 bg-pink-400', size: 'w-16 h-16', shape: 'rounded-2xl', opacity: 'opacity-40', rotate: '-rotate-6' },
-  { style: 'absolute top-1/2 left-1/4 bg-blue-400', size: 'w-8 h-8', shape: 'rounded-full', opacity: 'opacity-50', rotate: 'rotate-45' },
-  { style: 'absolute bottom-24 left-1/3 bg-purple-400', size: 'w-6 h-6', shape: 'rounded-full', opacity: 'opacity-40', rotate: 'rotate-12' },
+  { style: { top: '10%', left: '10%' }, size: 40, shape: '50%', opacity: 0.6, rotate: 12, color: 'warning.main' },
+  { style: { bottom: '16%', right: '16%' }, size: 64, shape: '16px', opacity: 0.4, rotate: -6, color: 'secondary.main' },
+  { style: { top: '50%', left: '25%' }, size: 32, shape: '50%', opacity: 0.5, rotate: 45, color: 'info.main' },
+  { style: { bottom: '24%', left: '33%' }, size: 24, shape: '50%', opacity: 0.4, rotate: 12, color: 'primary.main' },
 ];
+
+const bounce = keyframes`
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+`;
 
 const Home = () => {
   const { user, sendLoginLink } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,161 +99,327 @@ const Home = () => {
     setLinkSent(false);
   };
 
+  // Create theme-aware gradient background
+  const getGradientBackground = () => {
+    if (theme.palette.mode === 'dark') {
+      return `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 50%, ${theme.palette.error.dark} 100%)`;
+    }
+    return `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 50%, ${theme.palette.error.main} 100%)`;
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      <section className="relative flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-400 overflow-hidden">
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* Theme Toggle - Fixed position in top-right */}
+      <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1000 }}>
+        <ThemeToggle />
+      </Box>
+      
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: getGradientBackground(),
+          overflow: 'hidden'
+        }}
+      >
         {/* Fun floating shapes */}
         {funShapes.map((s, i) => (
-          <div
+          <Box
             key={i}
-            className={`z-0 ${s.style} ${s.size} ${s.shape} ${s.opacity} ${s.rotate} blur-2xl animate-pulse`}
-            style={{ animationDuration: `${2 + i}s` }}
+            sx={{
+              position: 'absolute',
+              zIndex: 0,
+              ...s.style,
+              width: s.size,
+              height: s.size,
+              borderRadius: s.shape,
+              bgcolor: s.color,
+              opacity: s.opacity,
+              transform: `rotate(${s.rotate}deg)`,
+              filter: 'blur(8px)',
+              animation: `${pulse} ${2 + i}s infinite`
+            }}
           />
         ))}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-32">
-          <div className="flex items-center justify-center mb-6">
-            <span className="inline-flex items-center justify-center bg-white bg-opacity-80 rounded-full p-4 shadow-lg">
-              <Camera className="h-12 w-12 text-blue-600" />
-            </span>
-          </div>
+        
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            px: 2,
+            py: 8
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)',
+                boxShadow: 3
+              }}
+            >
+              <Camera size={48} color={theme.palette.primary.main} />
+            </Avatar>
+          </Box>
           
           {isInvitedToJoin ? (
             <>
-              <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '2.5rem', md: '3.75rem' },
+                  fontWeight: 'extrabold',
+                  mb: 2,
+                  color: 'white',
+                  textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  letterSpacing: 'tight'
+                }}
+              >
                 You're invited! 🎉
-              </h1>
-              <p className="text-lg md:text-2xl text-white/90 mb-6 max-w-xl mx-auto font-medium">
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  color: 'rgba(255,255,255,0.9)',
+                  mb: 3,
+                  maxWidth: 'xl',
+                  mx: 'auto',
+                  fontWeight: 'medium'
+                }}
+              >
                 Someone wants to share photos with you on PicStream
-              </p>
-              <p className="text-lg text-white/80 mb-10 max-w-lg mx-auto">
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  color: 'rgba(255,255,255,0.8)',
+                  mb: 5,
+                  maxWidth: 'lg',
+                  mx: 'auto'
+                }}
+              >
                 Sign in to join the album and start sharing memories together
-              </p>
+              </Typography>
             </>
           ) : (
             <>
-              <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight">
-                Stream Photos. <span className="text-yellow-300">Share Memories.</span>
-              </h1>
-              <p className="text-lg md:text-2xl text-white/90 mb-10 max-w-xl mx-auto font-medium">
+              <Typography
+                variant="h2"
+                sx={{
+                  fontSize: { xs: '2.5rem', md: '3.75rem' },
+                  fontWeight: 'extrabold',
+                  mb: 2,
+                  color: 'white',
+                  textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  letterSpacing: 'tight'
+                }}
+              >
+                Stream Photos.{' '}
+                <Box component="span" sx={{ color: theme.palette.warning.main }}>
+                  Share Memories.
+                </Box>
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  color: 'rgba(255,255,255,0.9)',
+                  mb: 5,
+                  maxWidth: 'xl',
+                  mx: 'auto',
+                  fontWeight: 'medium'
+                }}
+              >
                 The easiest way to share photos & videos from any event 🎉
-              </p>
+              </Typography>
             </>
           )}
           
           {/* Login Form or Button */}
-          <div className="flex flex-col items-center justify-center">
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {!user && !showLoginForm && !linkSent && (
-              <button
+              <Button
                 onClick={() => setShowLoginForm(true)}
-                className="bg-white bg-opacity-80 text-blue-700 px-8 py-4 rounded-full font-bold text-lg shadow hover:bg-opacity-100 transition-colors duration-200 flex items-center justify-center"
+                variant="contained"
+                size="large"
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)',
+                  color: theme.palette.mode === 'dark' ? 'white' : 'primary.main',
+                  px: 4,
+                  py: 2,
+                  borderRadius: '50px',
+                  fontWeight: 'bold',
+                  fontSize: '1.125rem',
+                  boxShadow: theme.palette.mode === 'dark' ? 4 : 3,
+                  border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                  '&:hover': {
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,1)',
+                    boxShadow: theme.palette.mode === 'dark' ? 6 : 4
+                  }
+                }}
+                endIcon={<ArrowRight size={20} />}
               >
                 {isInvitedToJoin ? 'Sign In to Join' : 'Login'}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </button>
+              </Button>
             )}
             
             {!user && showLoginForm && !linkSent && (
-              <div className="bg-white bg-opacity-95 rounded-2xl p-8 shadow-xl max-w-md w-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {isInvitedToJoin ? 'Join the Album' : 'Welcome to PicStream'}
-                  </h2>
-                  <button
-                    onClick={resetForm}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-                <p className="text-gray-600 mb-6 text-center">
-                  {isInvitedToJoin 
-                    ? 'Enter your email to receive a secure login link and join the album'
-                    : 'Enter your email to receive a secure login link'
-                  }
-                </p>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
+              <Card
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)',
+                  borderRadius: 4,
+                  p: 4,
+                  boxShadow: 6,
+                  maxWidth: 400,
+                  width: '100%'
+                }}
+              >
+                <CardContent sx={{ p: 0 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                      {isInvitedToJoin ? 'Join the Album' : 'Welcome to PicStream'}
+                    </Typography>
+                    <IconButton onClick={resetForm} color="inherit">
+                      <X size={24} />
+                    </IconButton>
+                  </Box>
+                  <Typography sx={{ color: 'text.secondary', mb: 3, textAlign: 'center' }}>
+                    {isInvitedToJoin 
+                      ? 'Enter your email to receive a secure login link and join the album'
+                      : 'Enter your email to receive a secure login link'
+                    }
+                  </Typography>
+                  <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <TextField
                       type="email"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      fullWidth
                       placeholder="Email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      InputProps={{
+                        startAdornment: <Mail size={20} style={{ marginRight: 8, color: theme.palette.text.secondary }} />
+                      }}
                     />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {loading ? 'Sending...' : 'Send Login Link'}
-                  </button>
-                </form>
-                <p className="text-sm text-gray-500 text-center mt-4">
-                  No password required. We'll send you a secure link to sign in.
-                </p>
-              </div>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      fullWidth
+                      disabled={loading}
+                      sx={{ py: 1.5, fontWeight: 'semibold' }}
+                    >
+                      {loading ? 'Sending...' : 'Send Login Link'}
+                    </Button>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', mt: 2 }}>
+                    No password required. We'll send you a secure link to sign in.
+                  </Typography>
+                </CardContent>
+              </Card>
             )}
             
             {!user && linkSent && (
-              <div className="bg-white bg-opacity-95 rounded-2xl p-8 shadow-xl max-w-md w-full">
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                    <Send className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <Card
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.95)',
+                  borderRadius: 4,
+                  p: 4,
+                  boxShadow: 6,
+                  maxWidth: 400,
+                  width: '100%'
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Avatar
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      bgcolor: theme.palette.success[100],
+                      color: 'success.main',
+                      mx: 'auto',
+                      mb: 2
+                    }}
+                  >
+                    <Send size={24} />
+                  </Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>
                     Check your email
-                  </h2>
-                  <p className="text-gray-600 mb-4">
+                  </Typography>
+                  <Typography sx={{ color: 'text.secondary', mb: 2 }}>
                     We've sent a login link to <strong>{email}</strong>
-                  </p>
-                  <p className="text-sm text-gray-500 mb-6">
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
                     Click the link in your email to sign in to PicStream. The link will expire in 15 minutes.
-                  </p>
-                  <button
+                  </Typography>
+                  <Button
                     onClick={resetForm}
-                    className="text-blue-600 hover:text-blue-500 font-medium"
+                    sx={{ color: 'primary.main', fontWeight: 'medium' }}
                   >
                     Send another link
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </CardContent>
+              </Card>
             )}
             
             {user && (
-              <Link
+              <Button
+                component={Link}
                 to="/dashboard"
-                className="bg-white bg-opacity-80 text-blue-700 px-8 py-4 rounded-full font-bold text-lg shadow hover:bg-opacity-100 transition-colors duration-200 flex items-center justify-center"
+                variant="contained"
+                size="large"
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.9)',
+                  color: theme.palette.mode === 'dark' ? 'white' : 'primary.main',
+                  px: 4,
+                  py: 2,
+                  borderRadius: '50px',
+                  fontWeight: 'bold',
+                  fontSize: '1.125rem',
+                  boxShadow: theme.palette.mode === 'dark' ? 4 : 3,
+                  border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                  '&:hover': {
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,1)',
+                    boxShadow: theme.palette.mode === 'dark' ? 6 : 4
+                  }
+                }}
+                endIcon={<ArrowRight size={20} />}
               >
                 Go to Dashboard
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </Button>
             )}
-          </div>
-        </div>
-        {/* Subtle confetti or sparkles (optional, for fun) */}
-        <div className="pointer-events-none absolute inset-0 z-0">
+          </Box>
+        </Box>
+        
+        {/* Subtle confetti or sparkles */}
+        <Box sx={{ pointerEvents: 'none', position: 'absolute', inset: 0, zIndex: 0 }}>
           {[...Array(18)].map((_, i) => (
-            <div
+            <Box
               key={i}
-              className="absolute bg-white/60 rounded-full animate-bounce"
-              style={{
+              sx={{
+                position: 'absolute',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)',
+                borderRadius: '50%',
+                animation: `${bounce} ${1.5 + Math.random() * 2}s infinite`,
+                animationDelay: `${Math.random() * 2}s`,
                 width: `${6 + Math.random() * 10}px`,
                 height: `${6 + Math.random() * 10}px`,
                 left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDuration: `${1.5 + Math.random() * 2}s`,
-                animationDelay: `${Math.random() * 2}s`,
+                top: `${Math.random() * 100}%`
               }}
             />
           ))}
-        </div>
-      </section>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

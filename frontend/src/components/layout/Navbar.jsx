@@ -1,3 +1,4 @@
+// AI Generated - Needs Review
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,11 +9,31 @@ import {
   Menu, 
   X
 } from 'lucide-react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Avatar,
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  useTheme,
+  useMediaQuery
+} from '@mui/material';
+import ThemeToggle from '../../theme/ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = async () => {
     try {
@@ -31,154 +52,168 @@ const Navbar = () => {
   const navItems = [];
 
   return (
-    <nav className="bg-white shadow-lg border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+    <>
+      <AppBar position="static" elevation={1}>
+        <Toolbar>
           {/* Logo and main nav */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <Camera className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">PicStream AI</span>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Camera size={32} color={theme.palette.mode === 'dark' ? theme.palette.primary.main : 'white'} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                  PicStream AI
+                </Typography>
+              </Box>
             </Link>
             
             {/* Desktop navigation */}
-            <div className="hidden md:ml-10 md:flex md:space-x-8">
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <Button
                     key={item.path}
+                    component={Link}
                     to={item.path}
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                      isActive(item.path)
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
+                    startIcon={<Icon size={16} />}
+                    sx={{
+                      color: isActive(item.path) ? 'primary.main' : 'text.secondary',
+                      borderBottom: isActive(item.path) ? 2 : 0,
+                      borderColor: 'primary.main',
+                      borderRadius: 0,
+                      '&:hover': {
+                        backgroundColor: 'transparent',
+                        color: 'primary.main'
+                      }
+                    }}
                   >
-                    <Icon className="h-4 w-4 mr-1" />
                     {item.label}
-                  </Link>
+                  </Button>
                 );
               })}
-            </div>
-          </div>
+            </Box>
+          </Box>
+
+          {/* Theme Toggle - Always visible */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <ThemeToggle />
+          </Box>
 
           {/* User menu */}
-          <div className="flex items-center">
-            {user ? (
-              <div className="hidden md:flex md:items-center md:space-x-4">
-                <div className="flex items-center space-x-2">
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName}
-                      className="h-8 w-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.displayName || user.email}
-                  </span>
-                </div>
-                
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                  title="Logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </div>
-            ) : (
-              <div className="hidden md:flex md:items-center md:space-x-4">
-                {/* No login button - users should use the home page login */}
-              </div>
-            )}
-
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              >
-                {isMenuOpen ? (
-                  <X className="h-6 w-6" />
+          {user && (
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {user.photoURL ? (
+                  <Avatar src={user.photoURL} alt={user.displayName} sx={{ width: 32, height: 32 }} />
                 ) : (
-                  <Menu className="h-6 w-6" />
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                    <User size={16} />
+                  </Avatar>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                  {user.displayName || user.email}
+                </Typography>
+              </Box>
+              
+              <IconButton
+                onClick={handleLogout}
+                color="inherit"
+                title="Logout"
+              >
+                <LogOut size={20} />
+              </IconButton>
+            </Box>
+          )}
+
+          {/* Mobile menu button */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+            <IconButton
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              color="inherit"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
       {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+      <Drawer
+        anchor="top"
+        open={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        sx={{ display: { xs: 'block', md: 'none' } }}
+      >
+        <Box sx={{ width: '100%', pt: 8 }}>
+          <List>
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Link
+                <ListItem
                   key={item.path}
+                  component={Link}
                   to={item.path}
-                  className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
-                    isActive(item.path)
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
                   onClick={() => setIsMenuOpen(false)}
+                  sx={{
+                    color: isActive(item.path) ? 'primary.main' : 'text.primary',
+                    backgroundColor: isActive(item.path) ? theme.palette.primary[50] : 'transparent',
+                    '&:hover': {
+                      backgroundColor: 'action.hover'
+                    }
+                  }}
                 >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {item.label}
-                </Link>
+                  <ListItemIcon>
+                    <Icon size={20} />
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItem>
               );
             })}
             
-            {user ? (
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center px-3 py-2">
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName}
-                      className="h-8 w-8 rounded-full mr-3"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                      <User className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.displayName || user.email}
-                  </span>
-                </div>
-                
-
-                
-                <button
+            {/* Theme Toggle in mobile menu */}
+            <ListItem>
+              <ListItemIcon>
+                <ThemeToggle />
+              </ListItemIcon>
+              <ListItemText primary="Toggle Theme" />
+            </ListItem>
+            
+            {user && (
+              <>
+                <Divider />
+                <ListItem>
+                  <ListItemIcon>
+                    {user.photoURL ? (
+                      <Avatar src={user.photoURL} alt={user.displayName} sx={{ width: 32, height: 32 }} />
+                    ) : (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                        <User size={16} />
+                      </Avatar>
+                    )}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={user.displayName || user.email}
+                    secondary="Logged in"
+                  />
+                </ListItem>
+                <ListItem
+                  button
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
                 >
-                  <LogOut className="h-5 w-5 mr-3" />
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="border-t border-gray-200 pt-4 space-y-2">
-                {/* No login button - users should use the home page login */}
-              </div>
+                  <ListItemIcon>
+                    <LogOut size={20} />
+                  </ListItemIcon>
+                  <ListItemText primary="Logout" />
+                </ListItem>
+              </>
             )}
-          </div>
-        </div>
-      )}
-    </nav>
+          </List>
+        </Box>
+      </Drawer>
+    </>
   );
 };
 

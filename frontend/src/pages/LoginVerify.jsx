@@ -1,7 +1,16 @@
+// AI Generated - Needs Review
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Avatar,
+  useTheme
+} from '@mui/material';
 
 const LoginVerify = () => {
   const [searchParams] = useSearchParams();
@@ -9,6 +18,7 @@ const LoginVerify = () => {
   const { verifyLoginToken } = useAuth();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [error, setError] = useState('');
+  const theme = useTheme();
 
   useEffect(() => {
     const handleVerification = async () => {
@@ -62,68 +72,119 @@ const LoginVerify = () => {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-              <Loader className="h-6 w-6 text-blue-600 animate-spin" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.primary[100],
+                color: 'primary.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Verifying your login
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </Typography>
+            <Typography sx={{ color: 'text.secondary' }}>
               Please wait while we verify your login link...
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        py: 6,
+        px: { xs: 2, sm: 3, lg: 4 }
+      }}>
+        <Container maxWidth="sm">
+          <Box sx={{ textAlign: 'center' }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.success[100],
+                color: 'success.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <CheckCircle size={24} />
+            </Avatar>
+            <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Login successful!
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            </Typography>
+            <Typography sx={{ color: 'text.secondary' }}>
               Redirecting you to your destination...
-            </p>
-          </div>
-        </div>
-      </div>
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-            <XCircle className="h-6 w-6 text-red-600" />
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      bgcolor: 'background.default',
+      py: 6,
+      px: { xs: 2, sm: 3, lg: 4 }
+    }}>
+      <Container maxWidth="sm">
+        <Box sx={{ textAlign: 'center' }}>
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: theme.palette.error[100],
+              color: 'error.main',
+              mx: 'auto',
+              mb: 2
+            }}
+          >
+            <XCircle size={24} />
+          </Avatar>
+          <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
             Verification failed
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          </Typography>
+          <Typography sx={{ color: 'text.secondary', mb: 3 }}>
             {error}
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => navigate('/')}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Go to Home
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          </Typography>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => navigate('/')}
+            sx={{ fontWeight: 'medium' }}
+          >
+            Go to Home
+          </Button>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

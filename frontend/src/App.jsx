@@ -1,9 +1,12 @@
+// AI Generated - Needs Review
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { Box, Container } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AlbumProvider } from './contexts/AlbumContext';
+import AppThemeProvider from './theme/ThemeProvider';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -41,9 +44,14 @@ const ProtectedRoute = ({ children }) => {
   // Wait for both loading to be false AND user to be available
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <LoadingSpinner />
+      </Box>
     );
   }
   
@@ -65,10 +73,17 @@ function AppContent() {
   const location = useLocation();
   
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {/* Only show Navbar if not on Home page */}
       {location.pathname !== '/' && <Navbar />}
-      <main className="flex-1">
+      <Box component="main" sx={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={
             <PublicRoute>
@@ -101,7 +116,7 @@ function AppContent() {
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
-      </main>
+      </Box>
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -126,7 +141,7 @@ function AppContent() {
           },
         }}
       />
-    </div>
+    </Box>
   );
 }
 
@@ -144,13 +159,15 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AlbumProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </AlbumProvider>
-      </AuthProvider>
+      <AppThemeProvider>
+        <AuthProvider>
+          <AlbumProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </AlbumProvider>
+        </AuthProvider>
+      </AppThemeProvider>
     </QueryClientProvider>
   );
 }
