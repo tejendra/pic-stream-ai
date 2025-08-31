@@ -124,9 +124,8 @@ const ShareView = () => {
     const link = document.createElement('a');
     link.href = media.url;
     link.download = media.title || 'download';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   if (loading) {

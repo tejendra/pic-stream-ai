@@ -11,6 +11,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { sanitizeFilename } from '../utils/fileUtils';
 import {
   Box,
   Container,
@@ -52,10 +53,8 @@ const MediaDetail = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', media.originalName || 'download');
-      document.body.appendChild(link);
+      link.download = encodeURIComponent(sanitizeFilename(media.originalName));
       link.click();
-      link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
