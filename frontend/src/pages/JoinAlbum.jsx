@@ -23,28 +23,21 @@ const JoinAlbum = () => {
   const [error, setError] = useState('');
   const theme = useTheme();
 
-  useEffect(() => {
-    console.log('JoinAlbum useEffect - user:', user, 'loading:', loading, 'shareToken:', shareToken);
-    
+  useEffect(() => {    
     if (loading) {
       // Still determining auth state, do nothing yet
       return;
     }
 
     if (!user) {
-      console.log('User not logged in, redirecting to home');
       // If not logged in, redirect to home page with return URL
       navigate(`/?returnTo=/join/${shareToken}`);
       return;
     }
 
     const handleJoinAlbum = async () => {
-      try {
-        console.log('Attempting to join album with token:', shareToken);
-        console.log('User token available:', !!user.token);
-        
+      try {        
         const result = await joinAlbum(shareToken);
-        console.log('Join album result:', result);
         
         setAlbum(result.album);
         setStatus('success');
@@ -54,9 +47,6 @@ const JoinAlbum = () => {
           navigate(`/album/${result.albumId}`);
         }, 2000);
       } catch (error) {
-        console.error('Join album error:', error);
-        console.error('Error response:', error.response);
-        
         if (error.message?.includes('expired')) {
           setStatus('expired');
           setError('This album has expired and its contents are no longer available.');

@@ -22,7 +22,6 @@ router.post('/', [
 
     const { uid } = req.user;
     const { title, expirationDays = 30 } = req.body;
-
     // Calculate expiration date
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + expirationDays);

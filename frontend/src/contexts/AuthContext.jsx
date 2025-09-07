@@ -189,18 +189,6 @@ export const AuthProvider = ({ children }) => {
     refreshToken
   }), [customUser, loading, error, sendLoginLink, verifyLoginToken, logout, refreshToken]);
 
-  console.log('AuthContext value recreated:', { 
-    customUserUid: customUser?.uid, 
-    loading, 
-    error: !!error,
-    functionRefs: {
-      sendLoginLink: typeof sendLoginLink,
-      verifyLoginToken: typeof verifyLoginToken,
-      logout: typeof logout,
-      refreshToken: typeof refreshToken
-    }
-  });
-
   return (
     <AuthContext.Provider value={value}>
       {children}

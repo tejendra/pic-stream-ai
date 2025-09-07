@@ -23,6 +23,7 @@ import {
   IconButton,
   useTheme
 } from '@mui/material';
+import { formatDate } from '../utils/dateUtils';
 
 const MediaDetail = () => {
   const { id } = useParams();
@@ -67,35 +68,6 @@ const MediaDetail = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (date) => {
-    if (!date) {
-      return 'Invalid Date';
-    }
-    
-    let dateObj;
-    if (typeof date.toDate === 'function') {
-      // Firestore Timestamp object
-      dateObj = date.toDate();
-    } else if (date._seconds) {
-      // Plain object with _seconds and _nanoseconds
-      dateObj = new Date(date._seconds * 1000);
-    } else if (date instanceof Date) {
-      // JavaScript Date object
-      dateObj = date;
-    } else {
-      console.error('Invalid date format:', date);
-      return 'Invalid Date';
-    }
-    
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const handleDownload = async () => {
@@ -239,7 +211,13 @@ const MediaDetail = () => {
                         </Typography>
                       </Box>
                       <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                        {formatDate(media.uploadedAt)}
+                        {formatDate(media.uploadedAt, {format:{
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }})}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

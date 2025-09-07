@@ -33,7 +33,6 @@ const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = async () => {
     try {
@@ -68,48 +67,19 @@ const Navbar = () => {
             
             {/* Desktop navigation */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Button
-                    key={item.path}
-                    component={Link}
-                    to={item.path}
-                    startIcon={<Icon size={16} />}
-                    sx={{
-                      color: isActive(item.path) ? 'primary.main' : 'text.secondary',
-                      borderBottom: isActive(item.path) ? 2 : 0,
-                      borderColor: 'primary.main',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        color: 'primary.main'
-                      }
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
+              {/* Theme Toggle - Always visible */}
+              
             </Box>
           </Box>
 
-          {/* Theme Toggle - Always visible */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <ThemeToggle />
-          </Box>
 
           {/* User menu */}
           {user && (
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <ThemeToggle />
+              </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {user.photoURL ? (
-                  <Avatar src={user.photoURL} alt={user.displayName} sx={{ width: 32, height: 32 }} />
-                ) : (
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                    <User size={16} />
-                  </Avatar>
-                )}
                 <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                   {user.displayName || user.email}
                 </Typography>
@@ -146,30 +116,6 @@ const Navbar = () => {
       >
         <Box sx={{ width: '100%', pt: 8 }}>
           <List>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <ListItem
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  sx={{
-                    color: isActive(item.path) ? 'primary.main' : 'text.primary',
-                    backgroundColor: isActive(item.path) ? theme.palette.primary[50] : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <Icon size={20} />
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItem>
-              );
-            })}
-            
             {/* Theme Toggle in mobile menu */}
             <ListItem>
               <ListItemIcon>

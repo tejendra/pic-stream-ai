@@ -26,14 +26,11 @@ import NotFound from './pages/NotFound';
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  
-  console.log('ProtectedRoute state:', { user: !!user, loading, userUid: user?.uid });
-  
+    
   // Add timeout to redirect to home if not authenticated after 5 seconds
   React.useEffect(() => {
     if (!loading && !user) {
       const timer = setTimeout(() => {
-        console.log('Redirecting to home page - user not authenticated after 5 seconds');
         navigate('/', { replace: true });
       }, 5000);
       
@@ -75,11 +72,11 @@ function AppContent() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
         bgcolor: 'background.default',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
       }}
+      className="app-content"
     >
       {/* Only show Navbar if not on Home page */}
       {location.pathname !== '/' && <Navbar />}

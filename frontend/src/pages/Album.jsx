@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlbumMediaQuery } from '../hooks/useAlbumMediaQuery';
+import { useAlbum } from '../contexts/AlbumContext';
 import { 
   ArrowLeft,
   Share2,
@@ -37,25 +38,19 @@ import {
   ToggleButtonGroup,
   useTheme
 } from '@mui/material';
+import { formatDate } from '../utils/dateUtils';
 
 const Album = () => {
-  console.log('Album component rendered');
   const { albumId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const theme = useTheme();
   
-  console.log('Album component state:', {
-    albumId,
-    userUid: user?.uid,
-    userToken: !!user?.token,
-    authLoading
-  });
-  
   // Add a useEffect to track when the component mounts
   React.useEffect(() => {
     console.log('Album component mounted with albumId:', albumId);
   }, [albumId]);
+
   const { 
     media, 
     loading, 
@@ -65,6 +60,7 @@ const Album = () => {
     downloadMultipleMedia, 
     refetch: fetchAlbumMedia 
   } = useAlbumMediaQuery(albumId);
+  const { deleteAlbum, isDeletingAlbum } = useAlbum();
   const [album, setAlbum] = useState(null);
   const [albumLoading, setAlbumLoading] = useState(false);
   const [albumError, setAlbumError] = useState(null);
@@ -75,19 +71,11 @@ const Album = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [mediaToDelete, setMediaToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteAlbumModal, setShowDeleteAlbumModal] = useState(false);
 
   useEffect(() => {
-    console.log('Album useEffect triggered:', { 
-      albumId, 
-      userUid: user?.uid, 
-      userToken: !!user?.token, 
-      authLoading, 
-      albumLoading 
-    });
-    
     const fetchAlbum = async () => {
       try {
-        console.log('Fetching album data...');
         const response = await fetch(`/api/albums/${albumId}`, {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -99,11 +87,9 @@ const Album = () => {
         }
         
         const data = await response.json();
-        console.log('Album data received:', data);
         setAlbum(data.album);
         setAlbumError(null); // Clear any previous errors
       } catch (error) {
-        console.error('Error fetching album:', error);
         setAlbumError(error.message);
       } finally {
         setAlbumLoading(false);
@@ -114,37 +100,8 @@ const Album = () => {
       setAlbumLoading(true);
       setAlbumError(null);
       fetchAlbum();
-    } else {
-      console.log('Not fetching album:', { 
-        hasUser: !!user, 
-        hasAlbumId: !!albumId, 
-        authLoading 
-      });
     }
   }, [albumId, user?.uid, user?.token, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const formatDate = (date) => {
-    if (!date) {
-      return 'Invalid Date';
-    }
-    
-    let dateObj;
-    if (typeof date.toDate === 'function') {
-      // Firestore Timestamp object
-      dateObj = date.toDate();
-    } else if (date._seconds) {
-      // Plain object with _seconds and _nanoseconds
-      dateObj = new Date(date._seconds * 1000);
-    } else if (date instanceof Date) {
-      // JavaScript Date object
-      dateObj = date;
-    } else {
-      console.error('Invalid date format:', date);
-      return 'Invalid Date';
-    }
-    
-    return dateObj.toLocaleDateString();
-  };
 
   const getDaysUntilExpiry = (expirationDate) => {
     if (!expirationDate) {
@@ -196,6 +153,25 @@ const Album = () => {
     setShowDeleteModal(false);
     setMediaToDelete(null);
     setIsDeleting(false);
+  };
+
+  const handleDeleteAlbum = () => {
+    setShowDeleteAlbumModal(true);
+  };
+
+  const confirmDeleteAlbum = async () => {
+    try {
+      await deleteAlbum(albumId);
+      setShowDeleteAlbumModal(false);
+      // Navigate back to dashboard after successful deletion
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to delete album:', error);
+    }
+  };
+
+  const cancelDeleteAlbum = () => {
+    setShowDeleteAlbumModal(false);
   };
 
   const handleUploadComplete = () => {
@@ -264,14 +240,6 @@ const Album = () => {
   }
 
   if (albumError || error || !album) {
-    console.log('Album error condition triggered:', { 
-      albumError, 
-      error, 
-      hasAlbum: !!album,
-      albumLoading,
-      authLoading 
-    });
-    
     return (
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Box sx={{ textAlign: 'center' }}>
@@ -362,6 +330,16 @@ const Album = () => {
                 sx={{ fontWeight: 'medium' }}
               >
                 Share Album
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<Trash2 size={20} />}
+                onClick={handleDeleteAlbum}
+                disabled={isDeletingAlbum}
+                sx={{ fontWeight: 'medium' }}
+              >
+                Delete Album
               </Button>
               <InlineUpload albumId={album.id} onUploadComplete={handleUploadComplete} />
             </Box>
@@ -594,6 +572,55 @@ const Album = () => {
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Album Modal */}
+      <Dialog open={showDeleteAlbumModal} onClose={cancelDeleteAlbum} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+              Delete Album
+            </Typography>
+            <IconButton onClick={cancelDeleteAlbum}>
+              <Typography variant="h6">×</Typography>
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: theme.palette.error[100],
+                color: 'error.main',
+                mx: 'auto',
+                mb: 2
+              }}
+            >
+              <Typography variant="h6">!</Typography>
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1 }}>
+              Delete "{album?.title}"?
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              This action cannot be undone. The album and all its media will be permanently deleted.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteAlbum} disabled={isDeletingAlbum}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteAlbum}
+            variant="contained"
+            color="error"
+            disabled={isDeletingAlbum}
+          >
+            {isDeletingAlbum ? 'Deleting...' : 'Delete Album'}
           </Button>
         </DialogActions>
       </Dialog>

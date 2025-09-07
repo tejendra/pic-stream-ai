@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlbum } from '../contexts/AlbumContext';
+import createApiClient from '../utils/apiClient';
 
 // Custom hook for managing albums with loading states
 export const useAlbums = () => {
@@ -9,44 +10,25 @@ export const useAlbums = () => {
     albums, 
     loading, 
     pagination, 
-    fetchAlbums, 
     createAlbum, 
-    deleteAlbum 
+    deleteAlbum,
+    albumsQuery,
+    isCreatingAlbum,
+    isDeletingAlbum
   } = useAlbum();
-  const [error, setError] = useState(null);
-
-  // Fetch albums when user changes
-  useEffect(() => {
-    if (user) {
-      fetchAlbums().catch(err => {
-        setError(err.message);
-      });
-    }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Clear error when albums are successfully fetched
-  useEffect(() => {
-    if (albums.length > 0 && error) {
-      setError(null);
-    }
-  }, [albums, error]);
 
   const handleCreateAlbum = async (title, expirationDays) => {
     try {
-      setError(null);
-      await createAlbum(title, expirationDays);
+      await createAlbum({ title, expirationDays });
     } catch (err) {
-      setError(err.message);
       throw err;
     }
   };
 
   const handleDeleteAlbum = async (albumId) => {
     try {
-      setError(null);
       await deleteAlbum(albumId);
     } catch (err) {
-      setError(err.message);
       throw err;
     }
   };
@@ -54,40 +36,36 @@ export const useAlbums = () => {
   return {
     albums,
     loading,
-    error,
+    error: albumsQuery.error,
     pagination,
     createAlbum: handleCreateAlbum,
     deleteAlbum: handleDeleteAlbum,
-    refetch: () => fetchAlbums().catch(err => setError(err.message))
+    refetch: albumsQuery.refetch,
+    isCreatingAlbum,
+    isDeletingAlbum
   };
 };
 
-// Custom hook for a specific album
+// Custom hook for a specific album using React Query
 export const useAlbumDetails = (albumId) => {
   const { user } = useAuth();
-  const { currentAlbum, getAlbum, loading } = useAlbum();
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const api = createApiClient();
 
-  useEffect(() => {
-    if (user && albumId) {
-      setIsLoading(true);
-      setError(null);
-      
-      getAlbum(albumId)
-        .catch(err => {
-          setError(err.message);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [user, albumId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const albumQuery = useQuery({
+    queryKey: ['album', albumId],
+    queryFn: async () => {
+      if (!albumId) return null;
+      const response = await api.get(`/albums/${albumId}`);
+      return response.data.album;
+    },
+    enabled: !!user && !!albumId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   return {
-    album: currentAlbum,
-    loading: loading || isLoading,
-    error,
-    refetch: () => getAlbum(albumId).catch(err => setError(err.message))
+    album: albumQuery.data,
+    loading: albumQuery.isLoading,
+    error: albumQuery.error,
+    refetch: albumQuery.refetch
   };
 }; 
