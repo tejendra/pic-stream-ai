@@ -1,4 +1,3 @@
-// AI Generated - Needs Review
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';

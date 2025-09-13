@@ -72,6 +72,7 @@ export const AlbumProvider = ({ children }) => {
   const joinAlbumMutation = useMutation({
     mutationFn: async (shareToken) => {
       const response = await api.post(`/albums/join/${shareToken}`);
+      console.log('response', response);
       return response.data;
     },
     onSuccess: () => {
@@ -184,7 +185,7 @@ export const AlbumProvider = ({ children }) => {
     
     // Mutations
     createAlbum: createAlbumMutation.mutate,
-    joinAlbum: joinAlbumMutation.mutate,
+    joinAlbum: joinAlbumMutation.mutateAsync,
     deleteAlbum: deleteAlbumMutation.mutate,
     getShareLink: getShareLinkMutation.mutate,
     

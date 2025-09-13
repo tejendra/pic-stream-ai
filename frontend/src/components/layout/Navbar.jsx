@@ -1,6 +1,5 @@
-// AI Generated - Needs Review
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Camera,
@@ -13,7 +12,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   IconButton,
   Avatar,
   Box,
@@ -24,31 +22,25 @@ import {
   ListItemText,
   Divider,
   useTheme,
-  useMediaQuery
-} from '@mui/material';
+  Button} from '@mui/material';
 import ThemeToggle from '../../theme/ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const theme = useTheme();
 
   const handleLogout = async () => {
     try {
       await logout();
-      // Force navigation to home page
-      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Force navigation to home page
       // Still try to navigate even if logout fails
       window.location.href = '/';
     }
   };
-
-  const isActive = (path) => location.pathname === path;
-
-  const navItems = [];
 
   return (
     <>
@@ -64,16 +56,9 @@ const Navbar = () => {
                 </Typography>
               </Box>
             </Link>
-            
-            {/* Desktop navigation */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
-              {/* Theme Toggle - Always visible */}
-              
-            </Box>
           </Box>
 
-
-          {/* User menu */}
+          {/* User menu on md or larger */}
           {user && (
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -143,7 +128,7 @@ const Navbar = () => {
                   />
                 </ListItem>
                 <ListItem
-                  button
+                  component={Button}
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);

@@ -4,14 +4,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Box,
   Typography,
   Button,
-  TextField,
   Alert,
-  IconButton
+  Link,
+  Stack
 } from '@mui/material';
-import { Copy } from 'lucide-react';
 import createApiClient from '../utils/apiClient';
 
 const ShareAlbumDialog = ({open, onClose, albumId}) => {
@@ -51,45 +49,31 @@ const ShareAlbumDialog = ({open, onClose, albumId}) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-            Share Album
-          </Typography>
-          <IconButton onClick={onClose}>
-            <Typography variant="h6">×</Typography>
-          </IconButton>
-        </Box>
+        Share Album
       </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1, color: 'text.primary' }}>
-            Share Link
+      <DialogContent sx={{ overflowX: 'clip'}}>
+        <Stack gap={2}>
+          <Typography variant="body1" >
+            Copy and share the link to invite others to view your album.
           </Typography>
-          <Box sx={{ display: 'flex' }}>
-            <TextField
-              value={shareUrl}
-              fullWidth
-              InputProps={{ readOnly: true }}
-              sx={{ '& .MuiOutlinedInput-root': { borderTopRightRadius: 0, borderBottomRightRadius: 0 } }}
-            />
+         
+          <Typography variant="body2" component={Link}>
+            {shareUrl}
+          </Typography>
+          <div>
             <Button
               onClick={() => copyToClipboard(shareUrl)}
-              variant="outlined"
-              sx={{ 
-                borderTopLeftRadius: 0, 
-                borderBottomLeftRadius: 0,
-                borderLeft: 'none'
-              }}
+              variant="contained"
             >
-              <Copy size={16} />
+              Copy Link
             </Button>
-          </Box>
+          </div>
           {copied && (
-            <Alert severity="success" sx={{ mt: 1 }}>
+            <Alert severity="success">
               Link copied to clipboard!
             </Alert>
           )}
-        </Box>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>

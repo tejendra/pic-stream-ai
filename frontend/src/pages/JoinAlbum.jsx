@@ -1,9 +1,8 @@
-// AI Generated - Needs Review
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlbum } from '../contexts/AlbumContext';
-import { CheckCircle, XCircle, Loader, Users, Calendar } from 'lucide-react';
+import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import {
   Box,
   Container,
@@ -38,7 +37,7 @@ const JoinAlbum = () => {
     const handleJoinAlbum = async () => {
       try {        
         const result = await joinAlbum(shareToken);
-        
+        console.log('result', result);
         setAlbum(result.album);
         setStatus('success');
         
@@ -47,6 +46,7 @@ const JoinAlbum = () => {
           navigate(`/album/${result.albumId}`);
         }, 2000);
       } catch (error) {
+        console.log('error', error);
         if (error.message?.includes('expired')) {
           setStatus('expired');
           setError('This album has expired and its contents are no longer available.');
@@ -125,39 +125,11 @@ const JoinAlbum = () => {
             <Typography variant="h3" sx={{ fontWeight: 'extrabold', color: 'text.primary', mb: 2 }}>
               Welcome to the album!
             </Typography>
-            {album && (
-              <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Typography variant="h5" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
-                  {album.title}
-                </Typography>
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Users size={16} style={{ color: theme.palette.text.secondary, marginRight: 4 }} />
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      {album.memberCount} members
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Calendar size={16} style={{ color: theme.palette.text.secondary, marginRight: 4 }} />
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Expires {album.expirationDate ? (() => {
-                        let expiryDate;
-                        if (typeof album.expirationDate.toDate === 'function') {
-                          expiryDate = album.expirationDate.toDate();
-                        } else if (album.expirationDate._seconds) {
-                          expiryDate = new Date(album.expirationDate._seconds * 1000);
-                        } else if (album.expirationDate instanceof Date) {
-                          expiryDate = album.expirationDate;
-                        } else {
-                          return 'Invalid Date';
-                        }
-                        return expiryDate.toLocaleDateString();
-                      })() : 'Invalid Date'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-            )}
+
+            <Typography variant="h5" sx={{ fontWeight: 'medium', color: 'text.primary', mb: 1 }}>
+              {album?.title}
+            </Typography>
+
             <Typography sx={{ mt: 2, color: 'text.secondary' }}>
               Redirecting you to the album...
             </Typography>

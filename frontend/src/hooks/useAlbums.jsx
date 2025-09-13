@@ -5,7 +5,6 @@ import createApiClient from '../utils/apiClient';
 
 // Custom hook for managing albums with loading states
 export const useAlbums = () => {
-  const { user } = useAuth();
   const { 
     albums, 
     loading, 

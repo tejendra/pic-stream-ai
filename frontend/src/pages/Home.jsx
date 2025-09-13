@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Camera, ArrowRight, Mail, Send, X } from 'lucide-react';
 import {
   Box,
-  Container,
   Typography,
   Button,
   TextField,
@@ -48,6 +47,85 @@ const pulse = keyframes`
     opacity: 0.5;
   }
 `;
+
+export const InvitedToJoin = () => {
+  return (
+    <>
+      <Typography
+        variant="h2"
+        sx={{
+          fontSize: { xs: '2.5rem', md: '3.75rem' },
+          fontWeight: 'extrabold',
+          mb: 2,
+          color: 'white',
+          textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+          letterSpacing: 'tight'
+        }}
+      >
+        You're invited! 🎉
+      </Typography>
+      <Typography
+        variant="h5"
+        sx={{
+          color: 'rgba(255,255,255,0.9)',
+          mb: 3,
+          maxWidth: 'xl',
+          mx: 'auto',
+          fontWeight: 'medium'
+        }}
+      >
+        Someone wants to share photos with you on PicStream
+      </Typography>
+      <Typography
+        variant="h6"
+        sx={{
+          color: 'rgba(255,255,255,0.8)',
+          mb: 5,
+          maxWidth: 'lg',
+          mx: 'auto'
+        }}
+      >
+        Sign in to join the album and start sharing memories together
+      </Typography>
+    </>
+  );
+};
+
+export const LandingMessage = () => {
+  const theme = useTheme();
+  return (
+    <>
+      <Typography
+        variant="h2"
+        sx={{
+          fontSize: { xs: '2.5rem', md: '3.75rem' },
+          fontWeight: 'extrabold',
+          mb: 2,
+          color: 'white',
+          textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+          letterSpacing: 'tight'
+        }}
+      >
+        Stream Photos.{' '}
+        <Box component="span" sx={{ color: theme.palette.warning.main }}>
+          Share Memories.
+        </Box>
+      </Typography>
+      <Typography
+        variant="h5"
+        sx={{
+          color: 'rgba(255,255,255,0.9)',
+          mb: 5,
+          maxWidth: 'xl',
+          mx: 'auto',
+          fontWeight: 'medium'
+        }}
+      >
+        The easiest way to share photos & videos from any event 🎉
+      </Typography>
+    </>
+  );
+};
 
 const Home = () => {
   const { user, sendLoginLink } = useAuth();
@@ -108,8 +186,7 @@ const Home = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Theme Toggle - Fixed position in top-right */}
+    <Box sx={{  bgcolor: 'background.default' }}>
       <Box sx={{ position: 'fixed', top: 16, right: 16, zIndex: 1000 }}>
         <ThemeToggle />
       </Box>
@@ -173,75 +250,9 @@ const Home = () => {
           </Box>
           
           {isInvitedToJoin ? (
-            <>
-              <Typography
-                variant="h2"
-                sx={{
-                  fontSize: { xs: '2.5rem', md: '3.75rem' },
-                  fontWeight: 'extrabold',
-                  mb: 2,
-                  color: 'white',
-                  textShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                  letterSpacing: 'tight'
-                }}
-              >
-                You're invited! 🎉
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{
-                  color: 'rgba(255,255,255,0.9)',
-                  mb: 3,
-                  maxWidth: 'xl',
-                  mx: 'auto',
-                  fontWeight: 'medium'
-                }}
-              >
-                Someone wants to share photos with you on PicStream
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: 'rgba(255,255,255,0.8)',
-                  mb: 5,
-                  maxWidth: 'lg',
-                  mx: 'auto'
-                }}
-              >
-                Sign in to join the album and start sharing memories together
-              </Typography>
-            </>
+            <InvitedToJoin />
           ) : (
-            <>
-              <Typography
-                variant="h2"
-                sx={{
-                  fontSize: { xs: '2.5rem', md: '3.75rem' },
-                  fontWeight: 'extrabold',
-                  mb: 2,
-                  color: 'white',
-                  textShadow: '0 4px 8px rgba(0,0,0,0.3)',
-                  letterSpacing: 'tight'
-                }}
-              >
-                Stream Photos.{' '}
-                <Box component="span" sx={{ color: theme.palette.warning.main }}>
-                  Share Memories.
-                </Box>
-              </Typography>
-              <Typography
-                variant="h5"
-                sx={{
-                  color: 'rgba(255,255,255,0.9)',
-                  mb: 5,
-                  maxWidth: 'xl',
-                  mx: 'auto',
-                  fontWeight: 'medium'
-                }}
-              >
-                The easiest way to share photos & videos from any event 🎉
-              </Typography>
-            </>
+            <LandingMessage />
           )}
           
           {/* Login Form or Button */}

@@ -1,9 +1,8 @@
-// AI Generated - Needs Review
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { Box, Container } from '@mui/material';
+import { Box } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AlbumProvider } from './contexts/AlbumContext';
 import AppThemeProvider from './theme/ThemeProvider';
@@ -18,7 +17,6 @@ import LoginVerify from './pages/LoginVerify';
 import Dashboard from './pages/Dashboard';
 import Album from './pages/Album';
 import MediaDetail from './pages/MediaDetail';
-import ShareView from './pages/ShareView';
 import JoinAlbum from './pages/JoinAlbum';
 import NotFound from './pages/NotFound';
 
@@ -108,7 +106,6 @@ function AppContent() {
               <MediaDetail />
             </ProtectedRoute>
           } />
-          <Route path="/share/:shareToken" element={<ShareView />} />
           <Route path="/join/:shareToken" element={<JoinAlbum />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

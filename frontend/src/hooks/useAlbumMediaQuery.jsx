@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import createApiClient from '../utils/apiClient';
 
 // Fetch album media function
-const fetchAlbumMedia = async ({ albumId, user, page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc' }) => {
+const fetchAlbumMedia = async ({ albumId, page = 1, limit = 20, sortBy = 'uploadedAt', sortOrder = 'desc' }) => {
   const api = createApiClient();
   const response = await api.get(`/media/album/${albumId}`, {
     params: { page, limit, sortBy, sortOrder }
@@ -13,7 +13,7 @@ const fetchAlbumMedia = async ({ albumId, user, page = 1, limit = 20, sortBy = '
 };
 
 // Upload single file function
-const uploadFile = async ({ file, albumId, user }) => {
+const uploadFile = async ({ file, albumId }) => {
   const api = createApiClient();
   const formData = new FormData();
   formData.append('file', file);
@@ -28,7 +28,7 @@ const uploadFile = async ({ file, albumId, user }) => {
 };
 
 // Upload multiple files function
-const uploadMultipleFiles = async ({ files, albumId, user }) => {
+const uploadMultipleFiles = async ({ files, albumId }) => {
   const api = createApiClient();
   const formData = new FormData();
   
@@ -46,13 +46,13 @@ const uploadMultipleFiles = async ({ files, albumId, user }) => {
 };
 
 // Delete media function
-const deleteMedia = async ({ mediaId, user }) => {
+const deleteMedia = async ({ mediaId }) => {
   const api = createApiClient();
   await api.delete(`/media/${mediaId}`);
 };
 
 // Download single media function
-const downloadSingleMedia = async ({ mediaId, fileName }) => {
+const downloadSingleMedia = async ({ mediaId }) => {
   const api = createApiClient();
   
   // Download the original file directly from the API
@@ -64,7 +64,7 @@ const downloadSingleMedia = async ({ mediaId, fileName }) => {
 };
 
 // Download multiple media function
-const downloadMultipleMedia = async ({ mediaItems, user }) => {
+const downloadMultipleMedia = async ({ mediaItems }) => {
   const api = createApiClient();
   const response = await api.post('/media/download-multiple', {
     mediaIds: mediaItems.map(item => item.id)
@@ -86,7 +86,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
     refetch
   } = useQuery({
     queryKey: ['albumMedia', albumId, user?.uid, page, limit, sortBy, sortOrder],
-    queryFn: () => fetchAlbumMedia({ albumId, user, page, limit, sortBy, sortOrder }),
+    queryFn: () => fetchAlbumMedia({ albumId, page, limit, sortBy, sortOrder }),
     enabled: !!user && !!albumId,
     staleTime: 2 * 60 * 1000, // 2 minutes
     cacheTime: 5 * 60 * 1000, // 5 minutes
@@ -102,7 +102,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
 
   // Upload single file mutation
   const uploadFileMutation = useMutation({
-    mutationFn: ({ file }) => uploadFile({ file, albumId, user }),
+    mutationFn: ({ file }) => uploadFile({ file, albumId }),
     onSuccess: (data) => {
       toast.success('File uploaded successfully!');
       // Invalidate and refetch album media
@@ -122,7 +122,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
 
   // Upload multiple files mutation
   const uploadMultipleFilesMutation = useMutation({
-    mutationFn: ({ files }) => uploadMultipleFiles({ files, albumId, user }),
+    mutationFn: ({ files }) => uploadMultipleFiles({ files, albumId }),
     onSuccess: (data) => {
       toast.success(`${data.files.length} files uploaded successfully!`);
       // Invalidate and refetch album media
@@ -142,7 +142,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
 
   // Delete media mutation
   const deleteMediaMutation = useMutation({
-    mutationFn: ({ mediaId }) => deleteMedia({ mediaId, user }),
+    mutationFn: ({ mediaId }) => deleteMedia({ mediaId }),
     onSuccess: () => {
       toast.success('Media deleted successfully');
       // Invalidate and refetch album media
@@ -160,7 +160,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
 
   // Download single media mutation
   const downloadSingleMediaMutation = useMutation({
-    mutationFn: ({ mediaId, fileName }) => downloadSingleMedia({ mediaId, fileName }),
+    mutationFn: ({ mediaId }) => downloadSingleMedia({ mediaId }),
     onSuccess: (data, variables) => {
       // Create download link for single file
       const blob = new Blob([data]);
@@ -187,7 +187,7 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
 
   // Download multiple media mutation
   const downloadMultipleMediaMutation = useMutation({
-    mutationFn: ({ mediaItems }) => downloadMultipleMedia({ mediaItems, user }),
+    mutationFn: ({ mediaItems }) => downloadMultipleMedia({ mediaItems }),
     onSuccess: (data, variables) => {
       // Create download link for zip file
       const blob = new Blob([data], { type: 'application/zip' });

@@ -33,14 +33,7 @@ const CreateAlbumDialog = ({ open, onClose }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-            Create New Album
-          </Typography>
-          <IconButton onClick={onClose}>
-            <Typography variant="h6">×</Typography>
-          </IconButton>
-        </Box>
+        Create New Album
       </DialogTitle>
       <DialogContent>
         <Box component="form" onSubmit={handleCreateAlbumSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
@@ -74,7 +67,7 @@ const CreateAlbumDialog = ({ open, onClose }) => {
         </Button>
         <Button 
           onClick={handleCreateAlbumSubmit}
-          variant="contained"
+          variant="text"
           disabled={isCreatingAlbum || !albumTitle.trim()}
         >
           {isCreatingAlbum ? 'Creating...' : 'Create Album'}

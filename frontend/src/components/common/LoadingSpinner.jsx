@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
 
-const LoadingSpinner = ({ size = 'md', className = '' }) => {
+const LoadingSpinner = ({ size = 'md' }) => {
   const sizeMap = {
     sm: 16,
     md: 32,

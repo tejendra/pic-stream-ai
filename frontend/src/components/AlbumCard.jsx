@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { CardContent, Typography, Box, IconButton, Button, Card, Stack } from '@mui/material';
-import { Share2, Trash2, Users, Image, Calendar, Clock } from 'lucide-react';
+import { Share2, Users, Image, Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { formatDate, getDaysUntilExpiry } from '../utils/dateUtils';
 import ShareAlbumDialog from './ShareAlbumDialog';
 
-const AlbumCard = ({album, handleShareAlbum}) => {
+const AlbumCard = ({album}) => {
   const theme = useTheme();
   const [showShareDialog, setShowShareDialog] = useState(false);
 

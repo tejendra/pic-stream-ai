@@ -21,13 +21,14 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 ### Frontend
 - **React 18** - Modern React with hooks and functional components
 - **Vite** - Fast build tool and development server
-- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
-- **React Router** - Client-side routing
-- **Firebase Auth** - Authentication and user management
+- **Material-UI (MUI)** - React component library for modern UI design
+- **React Router** - Client-side routing with protected routes
+- **React Query (TanStack Query)** - Data fetching and caching
+- **Firebase Auth** - Passwordless email authentication
 - **Axios** - HTTP client for API calls
 - **React Hot Toast** - Toast notifications
 - **Lucide React** - Beautiful icons
-- **Framer Motion** - Animation library
+- **Context API** - State management for auth and albums
 
 ### Backend
 - **Node.js** - JavaScript runtime
@@ -170,6 +171,127 @@ pic-stream-ai/
 ├── package.json             # Root package.json
 └── README.md
 ```
+
+## 🎨 UI Routes & Pages
+
+The frontend application uses React Router for client-side routing with the following page structure:
+
+### Public Routes (No Authentication Required)
+
+#### `/` - Home Page
+- **Component**: `Home.jsx`
+- **Purpose**: Landing page with login functionality
+- **Features**:
+  - Beautiful gradient background with animated shapes
+  - Email-based passwordless authentication
+  - Support for invitation links (`?returnTo=/join/:shareToken`)
+  - Theme toggle (light/dark mode)
+  - Responsive design with mobile optimization
+
+#### `/login/verify` - Login Verification
+- **Component**: `LoginVerify.jsx`
+- **Purpose**: Handles email link verification
+- **Features**:
+  - Token verification from email links
+  - Automatic redirect after successful verification
+  - Support for `returnTo` parameter for post-login navigation
+  - Loading, success, and error states
+
+#### `/share/:shareToken` - Public Share View
+- **Component**: `ShareView.jsx`
+- **Purpose**: Public viewing of shared media
+- **Features**:
+  - Password protection support
+  - Media display (images/videos)
+  - Download functionality (if enabled)
+  - Share and copy link features
+  - File information display
+  - Embed code generation
+
+### Protected Routes (Authentication Required)
+
+#### `/dashboard` - User Dashboard
+- **Component**: `Dashboard.jsx`
+- **Purpose**: Main user interface for managing albums
+- **Features**:
+  - Album list display
+  - Create new album functionality
+  - Album count and statistics
+  - Responsive grid layout
+
+#### `/album/:albumId` - Album View
+- **Component**: `Album.jsx`
+- **Purpose**: Detailed album view with media management
+- **Features**:
+  - Album information (title, member count, creation date, expiration)
+  - Media grid/gallery view
+  - Two view modes: Grouped by User and Grid View
+  - Upload functionality (inline upload component)
+  - Share album functionality
+  - Delete album/media capabilities
+  - Download individual or multiple media items
+  - Responsive design with mobile optimization
+
+#### `/media/:id` - Media Detail View
+- **Component**: `MediaDetail.jsx`
+- **Purpose**: Detailed view of individual media items
+- **Features**:
+  - Full-size media display (images/videos)
+  - Download original file functionality
+  - File information (uploader, date, size, type)
+  - Album navigation
+  - Responsive layout
+
+#### `/join/:shareToken` - Join Album
+- **Component**: `JoinAlbum.jsx`
+- **Purpose**: Join an album via share link
+- **Features**:
+  - Automatic album joining process
+  - Authentication redirect if not logged in
+  - Success/error/expired states
+  - Album information display
+  - Automatic redirect to album after joining
+
+### Error Routes
+
+#### `/404` - Not Found Page
+- **Component**: `NotFound.jsx`
+- **Purpose**: 404 error page
+- **Features**:
+  - Clean error display
+  - Navigation back to home
+  - Responsive design
+
+#### `*` - Catch-all Route
+- **Purpose**: Redirects any unmatched routes to `/404`
+
+### Route Protection
+
+The application uses two main route protection components:
+
+- **`ProtectedRoute`**: Wraps routes that require authentication
+  - Redirects unauthenticated users to home page
+  - Shows loading spinner while checking auth state
+  - 5-second timeout before redirect
+
+- **`PublicRoute`**: Wraps routes that should only be accessible to unauthenticated users
+  - Redirects authenticated users to dashboard
+  - Used for login and verification pages
+
+### Navigation Structure
+
+- **Navbar**: Present on all pages except home page (`/`)
+- **Theme Toggle**: Available on home page and navbar
+- **Breadcrumbs**: Contextual navigation in album and media views
+- **Back Navigation**: Consistent back button patterns throughout the app
+
+### Responsive Design
+
+All routes are fully responsive with:
+- Mobile-first design approach
+- Breakpoint-specific layouts
+- Touch-friendly interactions
+- Optimized for various screen sizes
 
 ## 🔧 API Endpoints
 
