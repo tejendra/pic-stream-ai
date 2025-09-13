@@ -1,6 +1,5 @@
-// AI Generated - Needs Review
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Camera,
@@ -13,7 +12,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   IconButton,
   Avatar,
   Box,
@@ -24,32 +22,25 @@ import {
   ListItemText,
   Divider,
   useTheme,
-  useMediaQuery
-} from '@mui/material';
+  Button} from '@mui/material';
 import ThemeToggle from '../../theme/ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleLogout = async () => {
     try {
       await logout();
-      // Force navigation to home page
-      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Force navigation to home page
       // Still try to navigate even if logout fails
       window.location.href = '/';
     }
   };
-
-  const isActive = (path) => location.pathname === path;
-
-  const navItems = [];
 
   return (
     <>
@@ -65,51 +56,15 @@ const Navbar = () => {
                 </Typography>
               </Box>
             </Link>
-            
-            {/* Desktop navigation */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4, gap: 2 }}>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Button
-                    key={item.path}
-                    component={Link}
-                    to={item.path}
-                    startIcon={<Icon size={16} />}
-                    sx={{
-                      color: isActive(item.path) ? 'primary.main' : 'text.secondary',
-                      borderBottom: isActive(item.path) ? 2 : 0,
-                      borderColor: 'primary.main',
-                      borderRadius: 0,
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        color: 'primary.main'
-                      }
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Box>
           </Box>
 
-          {/* Theme Toggle - Always visible */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <ThemeToggle />
-          </Box>
-
-          {/* User menu */}
+          {/* User menu on md or larger */}
           {user && (
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <ThemeToggle />
+              </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {user.photoURL ? (
-                  <Avatar src={user.photoURL} alt={user.displayName} sx={{ width: 32, height: 32 }} />
-                ) : (
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                    <User size={16} />
-                  </Avatar>
-                )}
                 <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                   {user.displayName || user.email}
                 </Typography>
@@ -146,30 +101,6 @@ const Navbar = () => {
       >
         <Box sx={{ width: '100%', pt: 8 }}>
           <List>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <ListItem
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  sx={{
-                    color: isActive(item.path) ? 'primary.main' : 'text.primary',
-                    backgroundColor: isActive(item.path) ? theme.palette.primary[50] : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <Icon size={20} />
-                  </ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItem>
-              );
-            })}
-            
             {/* Theme Toggle in mobile menu */}
             <ListItem>
               <ListItemIcon>
@@ -197,7 +128,7 @@ const Navbar = () => {
                   />
                 </ListItem>
                 <ListItem
-                  button
+                  component={Button}
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);

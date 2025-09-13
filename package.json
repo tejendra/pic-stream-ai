@@ -5,7 +5,7 @@
   "description": "High-quality photo and video sharing app with AI features",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"yarn workspace frontend dev\" \"yarn workspace backend dev\"",
+    "dev": "concurrently \"yarn workspace frontend dev --host\" \"yarn workspace backend dev\"",
     "dev:frontend": "yarn workspace frontend dev",
     "dev:backend": "yarn workspace backend dev",
     "build": "./build.sh",

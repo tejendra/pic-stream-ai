@@ -432,7 +432,7 @@ router.post('/download-multiple', async (req, res) => {
         
         archive.append(buffer, { name: media.originalName });
       } catch (error) {
-        console.error(`Error adding file ${media.id} to ZIP:`, error);
+        console.error('Error adding file to ZIP:', media.id, 'Error:', error);
         console.error('Attempted file path:', media.filePath);
         // Continue with other files
       }

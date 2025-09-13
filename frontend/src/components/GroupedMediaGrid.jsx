@@ -1,4 +1,5 @@
 // AI Generated - Needs Review
+// This component is not used yet
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -6,7 +7,6 @@ import {
   Trash2, 
   User, 
   CheckSquare, 
-  Square,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -196,7 +196,7 @@ const GroupedMediaGrid = ({ media, currentUserId, onDeleteMedia, onDownloadMedia
               <CardContent sx={{ p: 2 }}>
                 <Grid container spacing={2}>
                   {groupItems.map((item) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} xl={2.4} key={item.id}>
+                    <Grid item size={{ xs:12, sm: 6, md: 4, lg: 3, xl: 2.4 }} key={item.id}>
                       <Card sx={{ 
                         position: 'relative',
                         bgcolor: 'grey.50',

@@ -22,7 +22,6 @@ router.post('/', [
 
     const { uid } = req.user;
     const { title, expirationDays = 30 } = req.body;
-
     // Calculate expiration date
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + expirationDays);
@@ -263,7 +262,7 @@ router.delete('/:albumId', async (req, res) => {
       if (media.filePath) {
         deletePromises.push(
           bucket.file(media.filePath).delete().catch(err => 
-            console.log(`Failed to delete original file ${media.filePath}:`, err)
+            console.log('Failed to delete original file:', media.filePath, 'Error:', err)
           )
         );
       }
@@ -274,7 +273,7 @@ router.delete('/:albumId', async (req, res) => {
         const thumbnailPath = urlParts.slice(-3).join('/'); // Get last 3 parts (thumbnails/albumId/filename)
         deletePromises.push(
           bucket.file(thumbnailPath).delete().catch(err => 
-            console.log(`Failed to delete thumbnail ${thumbnailPath}:`, err)
+            console.log('Failed to delete thumbnail:', thumbnailPath, 'Error:', err)
           )
         );
       }
@@ -285,7 +284,7 @@ router.delete('/:albumId', async (req, res) => {
         const previewPath = urlParts.slice(-3).join('/'); // Get last 3 parts (previews/albumId/filename)
         deletePromises.push(
           bucket.file(previewPath).delete().catch(err => 
-            console.log(`Failed to delete preview ${previewPath}:`, err)
+            console.log('Failed to delete preview:', previewPath, 'Error:', err)
           )
         );
       }
