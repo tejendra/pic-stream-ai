@@ -25,10 +25,11 @@ Just got back from an amazing vacation with hundreds of stunning photos? Don't l
 - **React Router** - Client-side routing with protected routes
 - **React Query (TanStack Query)** - Data fetching and caching
 - **Firebase Auth** - Passwordless email authentication
-- **Axios** - HTTP client for API calls
+- **Custom API Client** - Centralized HTTP client with error handling
 - **React Hot Toast** - Toast notifications
 - **Lucide React** - Beautiful icons
 - **Context API** - State management for auth and albums
+- **Custom Hooks** - Reusable data fetching and mutation logic
 
 ### Backend
 - **Node.js** - JavaScript runtime
@@ -66,19 +67,6 @@ cd pic-stream-ai
 ```bash
 # Install all dependencies (recommended)
 yarn install
-
-# Or install manually:
-# Install root dependencies
-npm install
-
-# Install frontend dependencies
-cd frontend
-npm install
-
-# Install backend dependencies
-cd ../backend
-npm install
-```
 
 ### 3. Firebase Setup
 
@@ -142,35 +130,35 @@ yarn dev:frontend
 - Backend API: http://localhost:8080
 - API Health Check: http://localhost:8080/health
 
-## 📁 Project Structure
+## 🎨 Frontend Assets & Configuration
 
-```
-pic-stream-ai/
-├── frontend/                 # React frontend application
-│   ├── public/              # Static files
-│   │   ├── components/      # Reusable components
-│   │   │   ├── common/      # Common UI components
-│   │   │   └── layout/      # Layout components
-│   │   ├── contexts/        # React contexts
-│   │   ├── pages/           # Page components
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── utils/           # Utility functions
-│   │   ├── App.js           # Main App component
-│   │   └── index.js         # Entry point
-│   ├── package.json
-│   └── tailwind.config.js
-├── backend/                  # Node.js/Express backend
-│   ├── src/
-│   │   ├── config/          # Configuration files
-│   │   ├── middleware/      # Express middleware
-│   │   ├── routes/          # API routes
-│   │   ├── utils/           # Utility functions
-│   │   └── server.js        # Main server file
-│   ├── uploads/             # Local file storage (dev)
-│   └── package.json
-├── package.json             # Root package.json
-└── README.md
-```
+### Favicon & Icons
+The application includes a complete favicon setup for optimal browser and device support:
+
+- **favicon.ico** - Multi-size ICO file for browser tabs (16x16, 32x32)
+- **favicon-16x16.png** - Small PNG favicon for modern browsers
+- **favicon-32x32.png** - Standard PNG favicon for modern browsers
+- **apple-touch-icon.png** - iOS home screen icon (180x180)
+- **android-chrome-192x192.png** - Android PWA icon (192x192)
+- **android-chrome-512x512.png** - High-resolution PWA icon (512x512)
+- **og-image.jpg** - Social media preview image (1200x630)
+
+### Web App Manifest
+The `manifest.json` provides basic web app metadata without PWA installation features (MVP-focused):
+
+- **App metadata**: Name, description, theme colors
+- **Icon references**: All favicon files properly configured
+- **Browser display**: Standard web app behavior (not standalone)
+- **Theme integration**: Matches brand colors (#2563eb)
+
+### HTML Meta Tags
+The `index.html` includes comprehensive meta tags for:
+
+- **SEO optimization**: Title, description, keywords
+- **Social media sharing**: Open Graph tags for Facebook/LinkedIn
+- **Favicon support**: Multiple favicon formats for different browsers
+- **Responsive design**: Viewport configuration for mobile devices
+- **Theme integration**: Browser UI color matching
 
 ## 🎨 UI Routes & Pages
 
@@ -296,54 +284,233 @@ All routes are fully responsive with:
 ## 🔧 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
+- `POST /api/auth/login` - Passwordless email authentication
+- `GET /api/auth/verify` - Verify email token
 - `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
+- `POST /api/auth/logout` - User logout
+
+### Albums
+- `GET /api/albums` - Get user's albums (with pagination)
+- `POST /api/albums` - Create new album
+- `GET /api/albums/:id` - Get specific album details
+- `PUT /api/albums/:id` - Update album
+- `DELETE /api/albums/:id` - Delete album
+- `POST /api/albums/:id/share` - Generate album share link
+- `POST /api/albums/join/:shareToken` - Join album via share token
 
 ### Media Management
-- `POST /api/upload/single` - Upload single file
-- `POST /api/upload/multiple` - Upload multiple files
-- `GET /api/media/my` - Get user's media
-- `GET /api/media/public` - Get public media
-- `GET /api/media/:id` - Get specific media
-- `PUT /api/media/:id` - Update media
+- `GET /api/albums/:albumId/media` - Get album media
+- `POST /api/albums/:albumId/media` - Upload media to album
+- `GET /api/media/:id` - Get specific media details
 - `DELETE /api/media/:id` - Delete media
-- `GET /api/media/:id/download` - Download media
+- `GET /api/media/:id/download` - Download media file
 
-### Sharing
-- `POST /api/share/generate` - Generate share link
-- `GET /api/share/:token` - Get shared content
-- `GET /api/share/:token/download` - Download shared content
-- `GET /api/share/my/shares` - Get user's shares
-- `PUT /api/share/:id` - Update share settings
-- `DELETE /api/share/:id` - Delete share
+### Individual File Sharing
+- `POST /api/share` - Generate share link for individual file
+- `GET /api/share/:shareToken` - Get shared content
+- `GET /api/share/:shareToken/download` - Download shared content
+- `POST /api/share/:shareToken/verify` - Verify password-protected shares
 
-### AI Features
-- `POST /api/ai/enhance/:id` - Enhance image
-- `POST /api/ai/resize/:id` - Generate resized versions
-- `POST /api/ai/auto-tag/:id` - Auto-tag image
-- `POST /api/ai/collage` - Create image collage
-- `GET /api/ai/status/:id` - Get AI processing status
+## 🏗️ Architecture & Custom Hooks
 
-## 🚀 Deployment
+### Custom Hooks
+The application uses custom hooks for centralized data management:
 
-### Frontend Deployment (Vercel/Netlify)
-1. Build the frontend: `cd frontend && npm run build`
-2. Deploy the `build` folder to your hosting platform
-3. Set environment variables in your hosting platform
+- **`useAuth`** - Authentication state and user management
+- **`useAlbums`** - Album CRUD operations and state management
+- **`useAlbumMediaQuery`** - Media operations within albums (upload, download, delete)
+- **`useMediaQuery`** - Individual media item fetching and management
+- **`useAlbumDetails`** - Specific album details with caching
 
-### Backend Deployment (Heroku/Railway)
-1. Set up your deployment platform
-2. Configure environment variables
-3. Deploy the backend directory
-4. Update frontend API URL to production backend URL
+### State Management
+- **React Context API** - Global state for authentication and album management
+- **React Query (TanStack Query)** - Server state management, caching, and synchronization
+- **Local State** - Component-specific state using React hooks
 
-### Firebase Deployment
-1. Configure Firebase Hosting for frontend
-2. Set up Firebase Functions for backend (optional)
-3. Configure Firebase Storage rules
-4. Set up Firestore security rules
+### API Client
+- **Centralized HTTP Client** - Custom API client with automatic token handling
+- **Error Handling** - Consistent error handling across all API calls
+- **Request/Response Interceptors** - Automatic token refresh and error management
+
+### Utility Functions
+- **`fileUtils.js`** - File-related utilities (sanitizeFilename, formatFileSize)
+- **`dateUtils.js`** - Date formatting and calculation utilities
+- **`apiClient.jsx`** - Centralized API client configuration
+
+## 🚀 Firebase Deployment
+
+### Prerequisites
+- Firebase CLI installed: `npm install -g firebase-tools`
+- Firebase project created and configured
+- Environment variables set up
+
+### 1. Firebase Project Setup
+```bash
+# Login to Firebase
+firebase login
+
+# Initialize Firebase in your project root
+firebase init
+
+# Select the following services:
+# - Hosting (for frontend)
+# - Functions (for backend)
+# - Firestore (database)
+# - Storage (file storage)
+```
+
+### 2. Frontend Deployment (Firebase Hosting)
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+yarn install
+
+# Build the production version
+yarn build
+
+# Deploy to Firebase Hosting
+firebase deploy --only hosting
+```
+
+### 3. Backend Deployment (Firebase Functions)
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+yarn install
+
+# Deploy backend as Firebase Functions
+firebase deploy --only functions
+```
+
+### 4. Environment Configuration
+Set up environment variables in Firebase:
+
+```bash
+# Set Firebase Functions environment variables
+firebase functions:config:set app.firebase_service_account_key="your-service-account-json"
+firebase functions:config:set app.firebase_storage_bucket="your-project-id.appspot.com"
+firebase functions:config:set app.firebase_database_url="https://your-project-id.firebaseio.com"
+
+# Set Firebase Hosting environment variables
+firebase functions:config:set app.firebase_api_key="your-api-key"
+firebase functions:config:set app.firebase_auth_domain="your-project-id.firebaseapp.com"
+firebase functions:config:set app.firebase_project_id="your-project-id"
+```
+
+### 5. Firebase Configuration Files
+
+#### `firebase.json` (Root directory)
+```json
+{
+  "hosting": {
+    "public": "frontend/build",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": {
+    "source": "backend",
+    "runtime": "nodejs18"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
+```
+
+#### `firestore.rules`
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Albums collection
+    match /albums/{albumId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid in resource.data.members || 
+         request.auth.uid == resource.data.createdBy);
+    }
+    
+    // Media collection
+    match /media/{mediaId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.uploadedBy;
+    }
+    
+    // Shares collection
+    match /shares/{shareId} {
+      allow read: if resource.data.isActive == true;
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.uploadedBy;
+    }
+  }
+}
+```
+
+#### `storage.rules`
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /uploads/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /thumbnails/{allPaths=**} {
+      allow read: if true; // Public read for thumbnails
+      allow write: if request.auth != null;
+    }
+  }
+}
+```
+
+### 6. Deploy Everything
+```bash
+# Deploy all services at once
+firebase deploy
+
+# Or deploy specific services
+firebase deploy --only hosting,functions,firestore,storage
+```
+
+### 7. Post-Deployment
+1. **Update CORS settings** in Firebase Functions for your domain
+2. **Configure custom domain** in Firebase Hosting (optional)
+3. **Set up SSL certificates** (automatic with Firebase)
+4. **Monitor usage** in Firebase Console
+
+### 8. Environment Variables for Production
+Update your frontend environment variables to point to Firebase Functions:
+
+```env
+# Frontend .env.production
+REACT_APP_API_URL=https://your-region-your-project-id.cloudfunctions.net
+REACT_APP_FIREBASE_API_KEY=your-api-key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+```
+
+### 9. Monitoring & Maintenance
+- **Firebase Console**: Monitor functions, hosting, and database usage
+- **Logs**: View function logs with `firebase functions:log`
+- **Performance**: Monitor with Firebase Performance Monitoring
+- **Analytics**: Track usage with Firebase Analytics
 
 ## 🤝 Contributing
 
@@ -362,10 +529,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Documentation: [docs.picstream.ai](https://docs.picstream.ai)
 - Issues: [GitHub Issues](https://github.com/yourusername/pic-stream-ai/issues)
 - Email: contact@picstream.ai
-
-## 🙏 Acknowledgments
-
-- Firebase for the amazing backend services
-- Tailwind CSS for the beautiful styling framework
-- React community for the excellent ecosystem
-- All contributors who help make this project better
