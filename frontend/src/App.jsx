@@ -101,7 +101,7 @@ function AppContent() {
               <Album />
             </ProtectedRoute>
           } />
-          <Route path="/media/:id" element={
+          <Route path="/album/:albumId/media/:mediaId" element={
             <ProtectedRoute>
               <MediaDetail />
             </ProtectedRoute>

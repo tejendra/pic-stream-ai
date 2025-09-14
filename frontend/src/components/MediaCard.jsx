@@ -48,7 +48,7 @@ const MediaCard = ({item, albumId}) => {
       '&:hover': { boxShadow: 4 },
       transition: 'box-shadow 0.2s ease-in-out'
     }}>
-      <Link to={`/media/${item.id}`} style={{ textDecoration: 'none' }}>
+      <Link to={`/album/${albumId}/media/${item.id}`} style={{ textDecoration: 'none' }}>
         <Box sx={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden' }}>
           {item.mimeType?.startsWith('image/') ? (
             <Box

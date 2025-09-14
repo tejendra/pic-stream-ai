@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useAlbumMediaQuery } from '../hooks/useAlbumMediaQuery';
+import { formatFileSize } from '../utils/fileUtils';
 import { 
   Download, 
   Calendar, 
@@ -24,24 +25,16 @@ import {
 import { formatDate } from '../utils/dateUtils';
 
 const MediaDetail = () => {
-  const { id } = useParams();
+  const { albumId, mediaId } = useParams();
   const navigate = useNavigate();
   const { loading: authLoading } = useAuth();
   const theme = useTheme();
-  const { downloadSingleMedia } = useAlbumMediaQuery();
-  const { media, loading, error } = useMediaQuery(id);
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  const { downloadSingleMedia } = useAlbumMediaQuery(albumId);
+  const { media, loading, error } = useMediaQuery(mediaId);
 
   const handleDownload = () => {
     if (media) {
-      downloadSingleMedia({ mediaId: id });
+      downloadSingleMedia({ mediaId, fileName: media.originalName });
     }
   };
 
