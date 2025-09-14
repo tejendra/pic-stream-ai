@@ -23,10 +23,11 @@ import {
   Avatar,
   useTheme
 } from '@mui/material';
+import { formatFileSize } from '../utils/fileUtils';
 
 const UploadDialog = ({ open, onClose, albumId, onUploadComplete }) => {
   const theme = useTheme();
-  const { uploadFile } = useAlbumMediaQuery(albumId);
+  const { uploadFileAsync, uploadFileDirectToStorageAsync } = useAlbumMediaQuery(albumId);
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
@@ -68,14 +69,6 @@ const UploadDialog = ({ open, onClose, albumId, onUploadComplete }) => {
     });
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   const getFileIcon = (type) => {
     if (type.startsWith('image/')) return <Image size={20} style={{ color: theme.palette.primary.main }} />;
     if (type.startsWith('video/')) return <Video size={20} style={{ color: theme.palette.error.main }} />;
@@ -90,59 +83,62 @@ const UploadDialog = ({ open, onClose, albumId, onUploadComplete }) => {
     setUploadProgress({});
 
     try {
+      // Initialize all files to uploading status
+      const initialProgress = {};
+      files.forEach(fileData => {
+        initialProgress[fileData.id] = { status: 'uploading', progress: 0 };
+      });
+      setUploadProgress(initialProgress);
+
       // Upload each file individually
       const uploadPromises = files.map(async (fileData) => {
-        // Set file to uploading status
-        setUploadProgress(prev => ({
-          ...prev,
-          [fileData.id]: { status: 'uploading', progress: 0 }
-        }));
-
         try {
-          // Upload single file using the hook
-          await new Promise((resolve, reject) => {
-            uploadFile(
-              { file: fileData.file },
-              {
-                onSuccess: (data) => {
-                  // Mark file as completed
-                  setUploadProgress(prev => ({
-                    ...prev,
-                    [fileData.id]: { status: 'completed', progress: 100 }
-                  }));
-                  resolve(data);
-                },
-                onError: (error) => {
-                  // Mark file as error
-                  setUploadProgress(prev => ({
-                    ...prev,
-                    [fileData.id]: { 
-                      status: 'error', 
-                      progress: 0, 
-                      error: error.message || 'Upload failed' 
-                    }
-                  }));
-                  reject(error);
-                }
-              }
-            );
-          });
+          // Mark file as uploading
+          setUploadProgress(prev => ({
+            ...prev,
+            [fileData.id]: { status: 'uploading', progress: 0 }
+          }));
+
+          // Upload single file using the async hook
+          let result
+          if (fileData.file.size > 50 * 1024 * 1024) {
+            result = await uploadFileDirectToStorageAsync({ file: fileData.file });
+          } else {
+            result = await uploadFileAsync({ file: fileData.file });
+          }
+          
+          // Mark file as completed
+          setUploadProgress(prev => ({
+            ...prev,
+            [fileData.id]: { status: 'completed', progress: 100 }
+          }));
+          
+          return result;
         } catch (error) {
           console.error(`Upload error for file ${fileData.name}:`, error);
-          // Error handling is done in the onError callback above
+          
+          // Mark file as error
+          setUploadProgress(prev => ({
+            ...prev,
+            [fileData.id]: { 
+              status: 'error', 
+              progress: 0, 
+              error: error.message || 'Upload failed' 
+            }
+          }));
+          
+          throw error; // Re-throw to be caught by Promise.allSettled
         }
       });
 
       // Wait for all uploads to complete
-      await Promise.allSettled(uploadPromises);
-
-      // Check if all files completed successfully
-      const allCompleted = files.every(fileData => 
-        uploadProgress[fileData.id]?.status === 'completed'
-      );
-
-      if (allCompleted) {
-        // Clear files and close upload area after a short delay
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // Check if all uploads were successful
+      const allSuccessful = results.every(result => result.status === 'fulfilled');
+      
+      if (allSuccessful) {
+        // Wait a bit for final state updates, then close
         setTimeout(() => {
           if (onUploadComplete) {
             onUploadComplete();

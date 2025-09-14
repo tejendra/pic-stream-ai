@@ -27,6 +27,21 @@ const uploadFile = async ({ file, albumId, user }) => {
   return response.data;
 };
 
+// Upload single file function directly to storage bypassing the server for large files
+const uploadFileDirectToStorage = async ({ file, albumId, user }) => {
+  const api = createApiClient();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('albumId', albumId);
+
+  const response = await api.post('/upload/single-direct', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
 // Upload multiple files function
 const uploadMultipleFiles = async ({ files, albumId, user }) => {
   const api = createApiClient();
@@ -110,6 +125,26 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
     },
     onError: (error) => {
       console.error('Upload error:', error);
+      if (error.response?.status === 410) {
+        toast.error('Album has expired');
+      } else if (error.response?.status === 400 && error.response.data.error?.includes('250MB')) {
+        toast.error('File size exceeds 250MB limit');
+      } else {
+        toast.error('Upload failed');
+      }
+    }
+  });
+
+  // Upload single file mutation
+  const uploadFileDirectToStorageMutation = useMutation({
+    mutationFn: ({ file }) => uploadFileDirectToStorage({ file, albumId, user }),
+    onSuccess: (data) => {
+      toast.success('File uploaded successfully!');
+      // Invalidate and refetch album media
+      queryClient.invalidateQueries(['albumMedia', albumId]);
+    },
+    onError: (error) => {
+      console.error('Upload direct to storage error:', error);
       if (error.response?.status === 410) {
         toast.error('Album has expired');
       } else if (error.response?.status === 400 && error.response.data.error?.includes('250MB')) {
@@ -227,13 +262,21 @@ export const useAlbumMediaQuery = (albumId, page = 1, limit = 20, sortBy = 'uplo
     
     // Mutations
     uploadFile: uploadFileMutation.mutate,
+    uploadFileAsync: uploadFileMutation.mutateAsync,
+    uploadFileDirectToStorage: uploadFileDirectToStorageMutation.mutate,
+    uploadFileDirectToStorageAsync: uploadFileDirectToStorageMutation.mutateAsync,
     uploadMultipleFiles: uploadMultipleFilesMutation.mutate,
+    uploadMultipleFilesAsync: uploadMultipleFilesMutation.mutateAsync,
     deleteMedia: deleteMediaMutation.mutate,
+    deleteMediaAsync: deleteMediaMutation.mutateAsync,
     downloadSingleMedia: downloadSingleMediaMutation.mutate,
+    downloadSingleMediaAsync: downloadSingleMediaMutation.mutateAsync,
     downloadMultipleMedia: downloadMultipleMediaMutation.mutate,
+    downloadMultipleMediaAsync: downloadMultipleMediaMutation.mutateAsync,
     
     // Loading states
     isUploading: uploadFileMutation.isLoading,
+    isUploadingDirectToStorage: uploadFileDirectToStorageMutation.isLoading,
     isUploadingMultiple: uploadMultipleFilesMutation.isLoading,
     isDeleting: deleteMediaMutation.isLoading,
     isDownloadingSingle: downloadSingleMediaMutation.isLoading,

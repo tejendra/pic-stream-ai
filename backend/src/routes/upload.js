@@ -526,4 +526,303 @@ router.post('/thumbnail/:fileId', async (req, res) => {
   }
 });
 
+// Upload single file directly to Firebase Storage (bypasses timeout limits)
+router.post('/single-direct', upload.single('file'), async (req, res) => {
+  console.log('Single-direct route hit, processing request...');
+  
+  // Set a longer timeout for this specific route
+  req.setTimeout(600000); // 10 minutes
+  res.setTimeout(600000); // 10 minutes
+  
+  // Handle multer errors
+  if (req.fileValidationError) {
+    console.error('Multer validation error:', req.fileValidationError);
+    return res.status(400).json({ error: req.fileValidationError });
+  }
+  
+  if (req.fileFilterError) {
+    console.error('Multer filter error:', req.fileFilterError.message);
+    return res.status(400).json({ error: req.fileFilterError.message });
+  }
+  
+  // Check for multer errors in the request
+  if (req.multerError) {
+    console.error('Multer error:', req.multerError);
+    return res.status(400).json({ error: 'File upload error: ' + req.multerError.message });
+  }
+  
+  console.log('Multer processing completed, checking file...');
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { uid } = req.user;
+    const { albumId } = req.body;
+    console.log('Album ID:', albumId);
+    if (!albumId) {
+      return res.status(400).json({ error: 'Album ID is required' });
+    }
+
+    // Verify user is a member of the album
+    const memberDoc = await db.collection('albumMembers')
+      .doc(`${albumId}_${uid}`)
+      .get();
+
+    if (!memberDoc.exists) {
+      return res.status(403).json({ error: 'Access denied to this album' });
+    }
+    console.log(`User is a member of the album`);
+    // Check if album has expired
+    const albumDoc = await db.collection('albums').doc(albumId).get();
+    if (!albumDoc.exists) {
+      return res.status(404).json({ error: 'Album not found' });
+    }
+    console.log(`Album found`);
+    const album = albumDoc.data();
+    if (album.expirationDate.toDate() < new Date()) {
+      return res.status(410).json({ error: 'Album has expired' });
+    }
+    console.log(`Album not expired`);
+    const file = req.file;
+    
+    // Check file size limit (250MB per spec)
+    if (file.size > 250 * 1024 * 1024) {
+      console.log(`File size limit exceeded`);
+      return res.status(400).json({ error: 'File size exceeds 250MB limit' });
+    }
+    
+    const fileId = uuidv4();
+    const fileExtension = path.extname(file.originalname);
+    const fileName = `${fileId}${fileExtension}`;
+    const filePath = `albums/${albumId}/${fileName}`;
+
+    // Upload file directly to Firebase Storage
+    const fileUpload = bucket.file(filePath);
+    console.log(`File upload object created`);
+      try {
+        // Upload the file buffer directly to Firebase Storage
+        console.log(`Starting Firebase Storage upload for file: ${fileId}`);
+        console.log(`File buffer size: ${file.buffer.length} bytes`);
+        
+        // Upload the file buffer directly to Firebase Storage
+        await fileUpload.save(file.buffer, {
+          metadata: {
+            contentType: file.mimetype,
+            metadata: {
+              originalName: file.originalname,
+              uploadedBy: uid,
+              albumId: albumId,
+              fileId: fileId
+            }
+          }
+        });
+      console.log(`File uploaded to: ${filePath}`);
+      
+      // Make file publicly accessible
+      await fileUpload.makePublic();
+      console.log(`File made publicly accessible`);
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+      // Save initial metadata to Firestore (without thumbnails/previews)
+      const initialMediaDoc = {
+        id: fileId,
+        fileName,
+        originalName: file.originalname,
+        filePath,
+        publicUrl,
+        thumbnailUrl: null, // Will be updated after processing
+        previewUrl: null,  // Will be updated after processing
+        mimeType: file.mimetype,
+        size: file.size,
+        uploadedBy: uid,
+        uploadedByEmail: req.user.email,
+        albumId: albumId,
+        uploadedAt: Timestamp.now(),
+        views: 0,
+        downloads: 0,
+        processingStatus: 'uploaded' // Track processing status
+      };
+      console.log(`Initial media document set`);
+      await db.collection('media').doc(fileId).set(initialMediaDoc);
+      console.log(`Initial media document set`);
+      // Update album media count
+      await db.collection('albums').doc(albumId).set({
+        mediaCount: FieldValue.increment(1),
+        updatedAt: Timestamp.now()
+      }, { merge: true });
+      console.log(`Album media count updated`);
+      // Process thumbnails and metadata asynchronously using setTimeout
+      setTimeout(() => {
+        processMediaAsync(fileId, filePath, file.mimetype, albumId, uid).catch(error => {
+          console.error(`Async processing failed for ${fileId}:`, error);
+        });
+      }, 0);
+      console.log(`Async processing started`);
+      
+      res.status(201).json({
+        message: 'File uploaded successfully',
+        media: initialMediaDoc
+      });
+      console.log(`File uploaded successfully`);
+    } catch (uploadError) {
+      console.error('Firebase Storage upload error:', uploadError);
+      return res.status(500).json({ error: 'Upload failed' });
+    }
+
+  } catch (error) {
+    console.error('Upload route error:', error);
+    return res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// Async function to process media after upload
+async function processMediaAsync(fileId, filePath, mimeType, albumId, uid) {
+  try {
+    console.log(`Starting async processing for file: ${fileId}, type: ${mimeType}`);
+    
+    // For large files (>50MB), skip processing to avoid timeouts
+    const fileUpload = bucket.file(filePath);
+    const [metadata] = await fileUpload.getMetadata();
+    
+    // Download the file from Firebase Storage for processing
+    console.log(`Downloading file from: ${filePath}`);
+    const [fileBuffer] = await fileUpload.download();
+    console.log(`Downloaded file buffer size: ${fileBuffer.length} bytes`);
+    
+    let thumbnailUrl = null;
+    let previewUrl = null;
+    let videoMetadata = null;
+
+    if (mimeType.startsWith('image/')) {
+      // Process image files
+      try {
+        // Generate 400x400 thumbnail
+        const thumbnailBuffer = await sharp(fileBuffer)
+          .resize(400, 400, { fit: 'cover' })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+
+        const thumbnailFileName = `thumb_${fileId}.jpg`;
+        const thumbnailPath = `thumbnails/${albumId}/${thumbnailFileName}`;
+        const thumbnailUpload = bucket.file(thumbnailPath);
+        
+        await thumbnailUpload.save(thumbnailBuffer, {
+          metadata: { contentType: 'image/jpeg' }
+        });
+        await thumbnailUpload.makePublic();
+        thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbnailPath}`;
+
+        // Generate 1920px preview
+        const previewBuffer = await sharp(fileBuffer)
+          .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+
+        const previewFileName = `preview_${fileId}.jpg`;
+        const previewPath = `previews/${albumId}/${previewFileName}`;
+        const previewUpload = bucket.file(previewPath);
+        
+        await previewUpload.save(previewBuffer, {
+          metadata: { contentType: 'image/jpeg' }
+        });
+        await previewUpload.makePublic();
+        previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+
+        console.log(`Image processing completed for: ${fileId}`);
+      } catch (imageError) {
+        console.error(`Image processing error for ${fileId}:`, imageError);
+      }
+
+    } else if (mimeType.startsWith('video/')) {
+      // Process video files
+      console.log(`Processing video file: ${fileId}`);
+      const videoProcessor = new VideoProcessor();
+      
+      try {
+        // Get video metadata
+        console.log(`Getting video metadata for: ${fileId}`);
+        videoMetadata = await videoProcessor.getVideoMetadata(fileBuffer);
+        console.log(`Video metadata retrieved:`, videoMetadata);
+        
+        // Generate thumbnail from first frame
+        console.log(`Generating thumbnail for: ${fileId}`);
+        const tempThumbnailPath = path.join(os.tmpdir(), `thumb_${fileId}.jpg`);
+        const thumbnailBuffer = await videoProcessor.generateThumbnail(fileBuffer, tempThumbnailPath, 400, 400);
+        console.log(`Thumbnail generated, size: ${thumbnailBuffer.length} bytes`);
+        
+        const thumbnailFileName = `thumb_${fileId}.jpg`;
+        const thumbnailPath = `thumbnails/${albumId}/${thumbnailFileName}`;
+        const thumbnailUpload = bucket.file(thumbnailPath);
+        
+        console.log(`Uploading thumbnail to: ${thumbnailPath}`);
+        await thumbnailUpload.save(thumbnailBuffer, {
+          metadata: { contentType: 'image/jpeg' }
+        });
+        await thumbnailUpload.makePublic();
+        thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbnailPath}`;
+        console.log(`Thumbnail uploaded: ${thumbnailUrl}`);
+
+        // Generate compressed preview video
+        console.log(`Generating preview video for: ${fileId}`);
+        const tempPreviewPath = path.join(os.tmpdir(), `preview_${fileId}.mp4`);
+        const previewBuffer = await videoProcessor.generatePreview(fileBuffer, tempPreviewPath, 1280, 720, 1000);
+        console.log(`Preview video generated, size: ${previewBuffer.length} bytes`);
+        
+        const previewFileName = `preview_${fileId}.mp4`;
+        const previewPath = `previews/${albumId}/${previewFileName}`;
+        const previewUpload = bucket.file(previewPath);
+        
+        console.log(`Uploading preview to: ${previewPath}`);
+        await previewUpload.save(previewBuffer, {
+          metadata: { contentType: 'video/mp4' }
+        });
+        await previewUpload.makePublic();
+        previewUrl = `https://storage.googleapis.com/${bucket.name}/${previewPath}`;
+        console.log(`Preview uploaded: ${previewUrl}`);
+
+        console.log(`Video processing completed for: ${fileId}`);
+      } catch (videoError) {
+        console.error(`Video processing error for ${fileId}:`, videoError);
+        console.error(`Video processing error stack:`, videoError.stack);
+      }
+    }
+
+    // Update the media document with processed data
+    const updateData = {
+      thumbnailUrl,
+      previewUrl,
+      processingStatus: 'completed',
+      processedAt: Timestamp.now(),
+      ...(videoMetadata && {
+        duration: videoMetadata.duration,
+        width: videoMetadata.width,
+        height: videoMetadata.height,
+        fps: videoMetadata.fps,
+        bitrate: videoMetadata.bitrate
+      })
+    };
+
+    console.log(`Updating media document for ${fileId} with:`, updateData);
+    await db.collection('media').doc(fileId).update(updateData);
+    console.log(`Media processing completed and updated for: ${fileId}`);
+
+  } catch (error) {
+    console.error(`Async processing error for ${fileId}:`, error);
+    
+    // Update status to failed
+    try {
+      await db.collection('media').doc(fileId).update({
+        processingStatus: 'failed',
+        processingError: error.message,
+        processedAt: Timestamp.now()
+      });
+    } catch (updateError) {
+      console.error(`Failed to update error status for ${fileId}:`, updateError);
+    }
+  }
+}
+
+
 module.exports = router; 
