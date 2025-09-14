@@ -9,13 +9,16 @@ import {
   CardContent,
   IconButton,
   Avatar,
-  Stack} from '@mui/material';
+  Stack,
+  useTheme} from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import DeleteMediaItemDialog from '../components/DeleteMediaItemDialog';
 import { useAlbumMediaQuery } from '../hooks/useAlbumMediaQuery';
 
 const MediaCard = ({item, albumId}) => {
   const { user } = useAuth();
+  const theme = useTheme();
+
   const { 
     downloadSingleMedia
   } = useAlbumMediaQuery(albumId);
